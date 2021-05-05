@@ -6,9 +6,74 @@ import subprocess
 import os
 import time
 from PIL import ImageTk, Image
+import pyttsx3
+import speech_recognition as sr
+from threading import *
 
 Font = ("Comic Sans MS", "10", "normal")
 file_path = ''
+engine = pyttsx3.init()
+recognizer = sr.Recognizer()
+
+def Speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+def Listen():
+    try:
+        with sr.Microphone(device_index = 2) as source:
+            print('Speak Now')
+            recognizer.adjust_for_ambient_noise(source)
+            voice = recognizer.listen(source,timeout=10)
+            text = recognizer.recognize_google(voice)
+            return text
+    except:
+        print("Can't hear")
+
+def Action():
+    command = Listen()
+    if command is not None:
+        command = command.lower()
+    else:
+        return
+    print(command)
+    if 'mute' in command:
+        command = Listen()
+        if command is not None:
+            command = command.lower()
+        else:
+            return
+        i = 0
+        while 'start' not in command:
+            command = Listen()
+            if command is not None:
+                command = command.lower()
+            else:
+                pass
+            Speak('Waiting')
+            i+=1
+
+    elif 'compile' in command:
+        Compile()
+        Speak('Compiled successfully')
+    elif 'close' in command:
+        Speak('Exiting....')
+        os._exit(0)
+    elif 'run' or ('compile' and 'run') in command:
+        Run()
+        Speak('Compiled and Ran successfully')
+    else:
+        pass
+
+    
+def multi_thread():
+    t = Thread(target = Start)
+    t.start()
+
+
+def Start():
+    while True:
+        Action()
 
 def Path(path):
     global file_path
@@ -112,4 +177,6 @@ code_input.pack(side = TOP, fill = X)
 code_output = Text(height = 8, font = Font)
 code_output.pack(side = TOP, fill = X)
 
+multi_thread()
 app.mainloop()
+

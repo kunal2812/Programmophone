@@ -1,15 +1,22 @@
+from tkinter import *
+import tkinter.ttk as ttk
+import tkinter.font
+from tkinter.filedialog import asksaveasfilename, askopenfilename
+import subprocess
+import os
+import time
+from PIL import ImageTk, Image
 import pyttsx3
 import speech_recognition as sr
-
 
 engine = pyttsx3.init()
 recognizer = sr.Recognizer()
 
 def Speak(text):
-    engine.say(something)
+    engine.say(text)
     engine.runAndWait()
 
-def Action()
+def Listen():
     try:
         with sr.Microphone(device_index = 2) as source:
             print('Speak Now')
@@ -20,4 +27,13 @@ def Action()
     except:
         print("Can't hear")
 
-
+def Action():
+    command = Listen()
+    command = command.lower()
+    print(command)
+    if 'compile' in command:
+        Compile()
+    elif 'run' or ('compile' and 'run') in command:
+        Run()
+    
+    
