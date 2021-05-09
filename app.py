@@ -11,6 +11,7 @@ import speech_recognition as sr
 from threading import *
 
 Font = ("Comic Sans MS", "10", "normal")
+Bfont = ("Comic Sans MS", "10", "bold")
 file_path = ''
 engine = pyttsx3.init()
 recognizer = sr.Recognizer()
@@ -28,7 +29,8 @@ def Listen():
             text = recognizer.recognize_google(voice)
             return text
     except:
-        print("Can't hear")
+        Speak("Can't hear")
+        Listen()
 
 def Action():
     command = Listen()
@@ -37,12 +39,9 @@ def Action():
     else:
         return
     print(command)
+
     if 'mute' in command:
         command = Listen()
-        if command is not None:
-            command = command.lower()
-        else:
-            return
         i = 0
         while 'start' not in command:
             command = Listen()
@@ -52,6 +51,27 @@ def Action():
                 pass
             Speak('Waiting')
             i+=1
+    elif 'open' and 'voice' in command:
+        p = 'files/'
+        Speak('Which one of the following would you like me to open ?')
+        files = os.listdir(p)
+        for file in files:
+            Speak(file)
+            time.sleep(2)
+        command = Listen()
+        command = command.lower()
+        command = command.replace('dot', '.')
+        command = command.replace(' ', '')
+        path = os.path.join(p, command)
+        if os.path.isfile(path):
+            Open_via_Voice(path)
+        else:
+            Speak('Try Again')
+
+    elif 'save' in command:
+        Save()
+    elif 'open' in command:
+        Open()
 
     elif 'compile' in command:
         Compile()
@@ -63,7 +83,7 @@ def Action():
         Run()
         Speak('Compiled and Ran successfully')
     else:
-        pass
+        return
 
     
 def multi_thread():
@@ -89,9 +109,35 @@ def Open():
     if file_path != '':
         lb.config(text = file_path)
 
+def Open_via_Voice(path):
+    with open(path, 'r') as file:
+        code = file.read()
+        editor.delete('1.0', END)
+        editor.insert('1.0', code)
+        Path(path)
+    if file_path != '':
+        lb.config(text = file_path)
+
+
 def Save():
     if file_path == '':
-        path = asksaveasfilename(filetypes=[('C++ Files', '*.cpp')])
+        p = 'files/'
+        Speak('What name would you like me to give to the file ?')
+        command = Listen()
+        command = command.lower()
+        command = command.replace('dot', '.')
+        command = command.replace(' ', '')
+        
+        Speak('I am saving it as ')
+        for char in command:
+            Speak(char)
+        Speak('Say yes to confirm and no to try again')
+        cmd = Listen()
+        cmd = cmd.lower()
+        if 'yes' in cmd:
+            path = os.path.join(p, command)
+        else:
+            Save()
     else:
         path = file_path
     with open(path, 'w') as file:
@@ -149,7 +195,7 @@ app.title('Programmophone')
 
 logo = ImageTk.PhotoImage(Image.open("img/cpp.png").resize((30, 30), Image.ANTIALIAS))
 
-lb = Label(app, justify = RIGHT, compound = LEFT, padx = 10, text = "newfile.cpp",  font = Font, image = logo)
+lb = Label(app, justify = RIGHT, compound = LEFT, padx = 10, text = "newfile.cpp",  font = Bfont, image = logo)
 lb.pack() 
 
 header = Menu(app)
@@ -160,23 +206,41 @@ header.add_command(label='Run', command=Run)
 header.add_command(label='Close', command=exit)
 app.config(menu=header)
 
-a = Scrollbar(app, orient = 'vertical')
-a.pack(side = RIGHT, fill = Y)
+F1 = Frame(relief = SUNKEN, borderwidth=3)
 
-# width = 168
-editor = Text(height = 20, wrap = NONE, font = Font, yscrollcommand = a.set)
-# editor = Text(height = 20, width = 168, font = Font)
+F2 = Frame(relief = SUNKEN, borderwidth=2)
+F3 = Frame(relief = SUNKEN, borderwidth=2)
+
+lb_in = Label(F2, padx = 10, text = "Input",  font = Bfont)
+lb_out = Label(F3, padx = 10, text = "Output",  font = Bfont)
+lb_in.pack(side= TOP, anchor="w")
+lb_out.pack(side= TOP, anchor="w")
+
+
+a = Scrollbar(master = F1 , orient = 'vertical')
+a.pack(side = RIGHT, fill = Y)
+b = Scrollbar(master = F2 , orient = 'vertical')
+b.pack(side = RIGHT, fill = Y)
+c = Scrollbar(master = F3 , orient = 'vertical')
+c.pack(side = RIGHT, fill = Y)
+
+editor = Text(master = F1, width = 100, height = 27, wrap = NONE, font = Font, yscrollcommand = a.set)
 editor.pack(side = TOP, fill = X)
 a.config(command = editor.yview)
 
-# code_input = Text(height = 6, width = 160, wrap = NONE, font = Font, yscrollcommand = a.set)
-code_input = Text(height = 6, font = Font)
+code_input = Text(master = F2, width = 100, height = 7, font = Font, yscrollcommand = b.set)
 code_input.pack(side = TOP, fill = X)
+b.config(command = code_input.yview)
 
-# code_output = Text(height = 8, width = 160, wrap = NONE, font = Font, yscrollcommand = a.set)
-code_output = Text(height = 8, font = Font)
+code_output = Text(master = F3, width = 100, height = 7, font = Font, yscrollcommand = c.set)
 code_output.pack(side = TOP, fill = X)
+c.config(command = code_output.yview)
+
+
+F1.pack(fill = BOTH, padx = 3, pady = 3)
+
+F2.pack(fill = BOTH, padx = 3, pady = 3)
+F3.pack(fill = BOTH, padx = 5, pady = 5)
 
 multi_thread()
 app.mainloop()
-

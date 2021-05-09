@@ -5,7 +5,7 @@ import pyaudio
 
 listener = sr.Recognizer()
 engine = pyttsx3.init()
-
+print(engine.getProperty('volume'))
 
 def talk(text):
     engine.say(text)
@@ -39,6 +39,3 @@ def run_alexa():
     else:
         talk('Please say the command again.')
 
-
-while True:
-    run_alexa()
