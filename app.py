@@ -185,6 +185,12 @@ def Run():
     code_output.insert('1.0', output)
     code_output.insert('1.0',  error)
 
+def ConfigPos(event):
+    pos = "Line: "
+    pos = pos + editor.index(INSERT)
+    pos = pos.replace('.', ' | Char: ')
+    pos_lb.config(text = pos)
+
 # def multiple_yview(x, y):
 #     editor.yview(x, y)
 #     code_input.yview(x, y)
@@ -207,6 +213,7 @@ header.add_command(label='Close', command=exit)
 app.config(menu=header)
 
 F1 = Frame(relief = SUNKEN, borderwidth=3)
+pos_lb = Label(F1, padx = 10, text = "Line: 0 | Char: 0", font = Bfont)
 
 F2 = Frame(relief = SUNKEN, borderwidth=2)
 F3 = Frame(relief = SUNKEN, borderwidth=2)
@@ -226,7 +233,11 @@ c.pack(side = RIGHT, fill = Y)
 
 editor = Text(master = F1, width = 100, height = 27, wrap = NONE, font = Font, yscrollcommand = a.set)
 editor.pack(side = TOP, fill = X)
+editor.bindtags(('Text', 'post-class-bindings', '.', 'all'))
 a.config(command = editor.yview)
+
+editor.bind_class("post-class-bindings", "<KeyPress>", ConfigPos)
+editor.bind_class("post-class-bindings", "<Button-1>", ConfigPos)
 
 code_input = Text(master = F2, width = 100, height = 7, font = Font, yscrollcommand = b.set)
 code_input.pack(side = TOP, fill = X)
@@ -238,6 +249,7 @@ c.config(command = code_output.yview)
 
 
 F1.pack(fill = BOTH, padx = 3, pady = 3)
+pos_lb.pack(side= TOP, anchor="w")
 
 F2.pack(fill = BOTH, padx = 3, pady = 3)
 F3.pack(fill = BOTH, padx = 5, pady = 5)
