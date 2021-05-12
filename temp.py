@@ -1,17 +1,10 @@
-import tkinter as tk
+from tkinter import *
 
-def check_pos(event):
-    print(type(t.index(tk.INSERT)))
-    print(t.index(tk.INSERT))
+root = Tk()
 
-root = tk.Tk()
+width = root.winfo_screenwidth()
+height = root.winfo_screenheight()
 
-t = tk.Text(root)
-t.pack()
-t.bindtags(('Text','post-class-bindings', '.', 'all'))
+print (width, height)
 
-t.bind_class("post-class-bindings", "<KeyPress>", check_pos)
-t.bind_class("post-class-bindings", "<Button-1>", check_pos)
-
-
-root.mainloop()
+mainloop()

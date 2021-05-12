@@ -4,6 +4,7 @@ import tkinter.font
 from tkinter.filedialog import asksaveasfilename, askopenfilename
 import subprocess
 import os
+import sys
 import time
 from PIL import ImageTk, Image
 import pyttsx3
@@ -79,7 +80,7 @@ def Action():
         Speak('Compiled successfully')
     elif 'close' in command:
         Speak('Exiting....')
-        os._exit(0)
+        sys.exit()
     elif 'run' or ('compile' and 'run') in command:
         Run()
         Speak('Compiled and Ran successfully')
@@ -89,6 +90,7 @@ def Action():
     
 def multi_thread():
     t = Thread(target = Start)
+    t.daemon=True
     t.start()
 
 
@@ -186,13 +188,11 @@ def Run():
     code_output.insert('1.0', output)
     code_output.insert('1.0',  error)
 
-# def multiple_yview(x, y):
-#     editor.yview(x, y)
-#     code_input.yview(x, y)
-#     code_output.yview(x, y)
 
 app = Tk()
+app.geometry("1200x670-100-38")
 app.title('Programmophone')
+app.minsize(1200, 670)
 
 logo = ImageTk.PhotoImage(Image.open("img/cpp.png").resize((30, 30), Image.ANTIALIAS))
 
@@ -204,44 +204,61 @@ header.add_command(label='Open', command=Open)
 header.add_command(label='Save', command=Save)
 header.add_command(label='Compile', command=Compile)
 header.add_command(label='Run', command=Run)
-header.add_command(label='Close', command=exit)
+header.add_command(label='Close', command=sys.exit)
 app.config(menu=header)
 
-F1 = CustomFrame(app, relief = SUNKEN, borderwidth=3)
+F1 = Frame(app, relief=SUNKEN, borderwidth=2)
+F1.pack(side=TOP, fill=BOTH)
+
+F1_left = CustomFrame(F1, height=27, relief = SUNKEN, borderwidth=2)
+F1_left.pack(side=LEFT, fill = BOTH, padx=(0, 10))
+
+F1_right = Frame(F1, relief=SUNKEN, borderwidth=2)
+F1_right.pack(side = RIGHT, fill = BOTH, padx=(20, 0))
+
+activity_lb = Label(F1_right, padx=10, text = "Activity Log", font=Bfont)
+activity_lb.pack(anchor=W)
+
+a = Scrollbar(F1_right, orient=VERTICAL)
+a.pack(side=RIGHT, fill=Y, pady=(0,25))
+
+activity_log = Text(F1_right, width = 50, height=27, yscrollcommand=a.set, borderwidth=2)
+activity_log.pack(fill = BOTH, pady=(0,20))
+activity_log.bind("<Key>", lambda e: "break")
+
+a.config(command=activity_log.yview)
 
 F2 = Frame(relief = SUNKEN, borderwidth=2)
-F3 = Frame(relief = SUNKEN, borderwidth=2)
+F2.pack(side=BOTTOM, fill=BOTH)
 
-lb_in = Label(F2, padx = 10, text = "Input",  font = Bfont)
-lb_out = Label(F3, padx = 10, text = "Output",  font = Bfont)
-lb_in.pack(side= TOP, anchor="w")
-lb_out.pack(side= TOP, anchor="w")
+F2_left = Frame(F2, relief = SUNKEN, borderwidth=2)
+F2_left.pack(side=LEFT, fill=BOTH)
+F2_right = Frame(F2, relief = SUNKEN, borderwidth=2)
+F2_right.pack(side=RIGHT, fill=BOTH)
 
-b = Scrollbar(master = F2 , orient = 'vertical')
-b.pack(side = RIGHT, fill = Y)
-c = Scrollbar(master = F3 , orient = 'vertical')
-c.pack(side = RIGHT, fill = Y)
+lb_in = Label(F2_left, padx = 10, text = "Input",  font = Bfont)
+lb_out = Label(F2_right, padx=10, text = "Output",  font = Bfont)
+lb_in.pack(anchor = 'w')
+lb_out.pack(anchor='w')
 
-editor = F1.text
-# editor.pack(side = TOP, fill = X)
-# editor.bindtags(('Text', 'post-class-bindings', '.', 'all'))
+b = Scrollbar(master = F2_left , orient = 'vertical')
+b.pack(side=RIGHT, fill = Y)
 
-# editor.bind_class("post-class-bindings", "<KeyPress>", ConfigPos)
-# editor.bind_class("post-class-bindings", "<Button-1>", ConfigPos)
+editor = F1_left.text
 
-code_input = Text(master = F2, width = 100, height = 7, font = Font, yscrollcommand = b.set)
-code_input.pack(side = TOP, fill = X)
+code_input = Text(master = F2_left, font = Font, width=50, yscrollcommand = b.set, borderwidth=2)
+code_input.pack(fill = BOTH, padx=2)
+
 b.config(command = code_input.yview)
 
-code_output = Text(master = F3, width = 100, height = 7, font = Font, yscrollcommand = c.set)
-code_output.pack(side = TOP, fill = X)
+c = Scrollbar(master = F2_right , orient = 'vertical')
+c.pack(side=RIGHT, fill = Y)
+
+code_output = Text(master = F2_right, font = Font, width=170, yscrollcommand = c.set, borderwidth=2)
+code_output.pack(fill = BOTH, padx=2)
+code_output.bind("<Key>", lambda e: "break")
+
 c.config(command = code_output.yview)
-
-
-F1.pack(fill = BOTH, padx = 3, pady = 3)
-
-F2.pack(fill = BOTH, padx = 3, pady = 3)
-F3.pack(fill = BOTH, padx = 5, pady = 5)
 
 multi_thread()
 app.mainloop()
