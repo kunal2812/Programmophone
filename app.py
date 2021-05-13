@@ -102,6 +102,12 @@ def Path(path):
     global file_path
     file_path = path
 
+def RemovePrev():
+    cmd = 'rm -frv a.exe'
+    p   = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
+    out = p.stdout.read()
+
+
 def Open():
     path = askopenfilename(filetypes = [('C++ Files', '*.cpp')])
     with open(path, 'r') as file:
@@ -151,6 +157,7 @@ def Save():
         lb.config(text = file_path)
 
 def Compile():
+    RemovePrev()
     if file_path == '':
         save_prompt = Toplevel()
         text = Label(save_prompt, text='Please save your code')
@@ -165,6 +172,7 @@ def Compile():
     code_output.insert('1.0',  error)
 
 def Run():
+    RemovePrev()
     if file_path == '':
         save_prompt = Toplevel()
         text = Label(save_prompt, text='Please save your code')
@@ -188,7 +196,6 @@ def Run():
     code_output.insert('1.0', output)
     code_output.insert('1.0',  error)
 
-
 app = Tk()
 app.geometry("1200x670-100-38")
 app.title('Programmophone')
@@ -197,6 +204,7 @@ app.minsize(1200, 670)
 logo = ImageTk.PhotoImage(Image.open("img/cpp.png").resize((30, 30), Image.ANTIALIAS))
 
 lb = Label(app, justify = RIGHT, compound = LEFT, padx = 10, text = "newfile.cpp",  font = Bfont, image = logo)
+
 lb.pack() 
 
 header = Menu(app)
