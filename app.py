@@ -11,74 +11,89 @@ import pyttsx3
 import speech_recognition as sr
 from threading import *
 from LineNum import *
+from SR import *
 
 Font = ("Comic Sans MS", "10", "normal")
 Bfont = ("Comic Sans MS", "10", "bold")
 file_path = ''
 engine = pyttsx3.init()
+engine.setProperty('rate', 100)
 recognizer = sr.Recognizer()
+is_on = False
 
-def Speak(text):
-    engine.say(text)
-    engine.runAndWait()
+dict =  {"hash":'#', 'slash':'/', 'hyphen':'-', 'underscore':'_', 'backslash':'\\', 
+            'left angular':'<', 'right-angular':'>', 'asterisk':'*', 'exclamation':'!',
+             'ampersand':'&', 'modulo':'%', 'plus':'+', 'minus':'-', 'divide':'/', 'dot':'.',
+              'and':'&&', 'or':'||', 'bitwise and':'&', 'bitwise or':'|', 'xor': '^', 'percent':'%'
+        }
+vocab = ['int', 'long long', 'unordered', 'map', 'set', 'pair', 'include', 'stdio',
+            'bits/stdc++.h', 'unordered_map', 'tree', 'node', 'list', 'stack', 'queue', 
+            'double', 'float', 'enum', 'unsigned', 'unordered_set', 'iostream', 'stdlib.h',
+            'string', 'char', 'array', 'slash', 'backslash', 'ampersand', 'underscore', 
+            'divide', 'plus', 'add', 'substract', 'multiply', 'modulo', 'hyphen', 'double slash',
+            'newline', 'tab', 'copy', 'line', 'open', 'save', 'compile', 'hey', 'misty', 'dequeue', 'bool',
+            'true', 'false', 'using', 'namespace', 'std', 'stdio.h', 'class', 'public', 'private', 'void', 
+            'main', 'pointer', 'cpp', 'py', 'txt', 'npos', 'null', 'substr', 'if', 'else', 'switch', 'case'
+            'xor', 'bitwise', 'and', 'or', 'd', 'll'
+        ]
 
-def Listen():
-    try:
-        with sr.Microphone(device_index = 2) as source:
-            print('Speak Now')
-            recognizer.adjust_for_ambient_noise(source)
-            voice = recognizer.listen(source,timeout=10)
-            text = recognizer.recognize_google(voice)
-            return text
-    except:
-        Speak("Can't hear")
-        Listen()
+def Path(path):
+    global file_path
+    file_path = path
 
-def Action():
+def MistyMode():
     command = Listen()
     if command is not None:
         command = command.lower()
-    else:
-        return
-    print(command)
-
-    if 'mute' in command:
-        command = Listen()
-        i = 0
-        while 'start' not in command:
-            command = Listen()
-            if command is not None:
-                command = command.lower()
-            else:
-                pass
-            Speak('Waiting')
-            i+=1
-    elif 'open' and 'voice' in command:
-        p = 'files/'
-        Speak('Which one of the following would you like me to open ?')
-        files = os.listdir(p)
-        for file in files:
-            Speak(file)
-            time.sleep(2)
-        command = Listen()
-        command = command.lower()
-        command = command.replace('dot', '.')
-        command = command.replace(' ', '')
-        path = os.path.join(p, command)
-        if os.path.isfile(path):
-            Open_via_Voice(path)
+        if 'hey' and 'misty' in command:
+            command = command.replace('hey', '')
+            command = command.replace('misty', '')
+            Action(command)
         else:
-            Speak('Try Again')
+            MistyMode()
+    else:
+        MistyMode()
 
-    elif 'save' in command:
-        Save()
+def VoiceMode():
+    command = Listen()
+    if command is not None:
+        command = command.lower()
+        Action(command)
+        VoiceMode()
+    else:
+        VoiceMode()
+
+def Action(command):
+    print(command)
+    if 'activate' and 'voice' in command:
+        Speak('Voice Mode on')
+        switch.config(image = on)
+        VoiceMode()
+    if 'deactivate' and 'voice' in command:        
+        Speak('Deactivated voice mode')
+        switch.config(image=off)
+        MistyMode()
+    elif 'include' in command:
+        command = command.replace('include', '')
+        command = command.replace(' ', '')
+        header = "#include<"
+        header = header+command+'>\n'
+        editor.insert(INSERT, header)
+    elif 'namespace' in command:
+        namespace = command + ';\n'
+        editor.insert(INSERT, namespace)
+    elif 'main' or 'men' in command:
+        command = command + '(){\n\n}'
+        editor.insert(INSERT, command)
+        editor.mark_set('insert', 'insert-1c')
     elif 'open' in command:
-        Open()
-
+        OpenVoice(editor, lb)
+    elif 'save' in command:
+        SaveVoice(file_path, editor, lb)
     elif 'compile' in command:
         Compile()
         Speak('Compiled successfully')
-    elif 'close' in command:
+    elif 'close' or 'exit' in command:
         Speak('Exiting....')
         sys.exit()
     elif 'run' or ('compile' and 'run') in command:
@@ -88,73 +103,46 @@ def Action():
         return
 
     
-def multi_thread():
-    t = Thread(target = Start)
+def multi_thread(target, *args):
+    t = Thread(target = target, args=args)
     t.daemon=True
     t.start()
 
 
 def Start():
-    while True:
-        Action()
-
-def Path(path):
-    global file_path
-    file_path = path
-
-def RemovePrev():
-    cmd = 'rm -frv a.exe'
-    p   = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
-    out = p.stdout.read()
-
+    MistyMode()
 
 def Open():
     path = askopenfilename(filetypes = [('C++ Files', '*.cpp')])
-    with open(path, 'r') as file:
-        code = file.read()
-        editor.delete('1.0', END)
-        editor.insert('1.0', code)
-        Path(path)
+    try:
+        with open(path, 'r') as file:
+            code = file.read()
+            editor.delete('1.0', END)
+            editor.insert('1.0', code)
+            Path(path)
+    except:
+        pass
     if file_path != '':
         lb.config(text = file_path)
-
-def Open_via_Voice(path):
-    with open(path, 'r') as file:
-        code = file.read()
-        editor.delete('1.0', END)
-        editor.insert('1.0', code)
-        Path(path)
-    if file_path != '':
-        lb.config(text = file_path)
-
 
 def Save():
     if file_path == '':
-        p = 'files/'
-        Speak('What name would you like me to give to the file ?')
-        command = Listen()
-        command = command.lower()
-        command = command.replace('dot', '.')
-        command = command.replace(' ', '')
-        
-        Speak('I am saving it as ')
-        for char in command:
-            Speak(char)
-        Speak('Say yes to confirm and no to try again')
-        cmd = Listen()
-        cmd = cmd.lower()
-        if 'yes' in cmd:
-            path = os.path.join(p, command)
-        else:
-            Save()
+        path = asksaveasfilename(filetypes=[('C++ Files', '*.cpp')])
     else:
         path = file_path
     with open(path, 'w') as file:
         code = editor.get('1.0', END)
         file.write(code)
-        Path(path)    
-    if file_path != '':
-        lb.config(text = file_path)
+        Path(path)
+    lb.config(text = file_path)
+
+def SaveAs():
+    path = asksaveasfilename(filetypes=[('C++ Files', '*.cpp')])
+    with open(path, 'w') as file:
+        code = editor.get('1.0', END)
+        file.write(code)
+        Path(path)
+    lb.config(text = file_path)
 
 def Compile():
     RemovePrev()
@@ -170,6 +158,14 @@ def Compile():
     a, error = process.communicate()
     code_output.delete('1.0', END)
     code_output.insert('1.0',  error)
+    if error is not None and is_on == True:
+        # i = error.index(':')
+        # err = error[i-3:]
+        # for t in range(0,3):
+        #     if err[:t].isdigit()==False:
+        #         err.replace(err[:t],'')
+        multi_thread(Speak, error)
+        # Speak(error)
 
 def Run():
     RemovePrev()
@@ -194,7 +190,34 @@ def Run():
     # print(output)
     code_output.delete('1.0', END)
     code_output.insert('1.0', output)
-    code_output.insert('1.0',  error)
+    code_output.insert('1.0',  error)   
+    if error is not None and is_on == True:
+        # multi_thread(Speak,error)
+        Speak(error)
+    if output is not None and is_on == True:
+        output = output.decode('utf-8')
+        multi_thread(Speak, output)
+        # Speak(output)
+        # print(type(output))
+
+def button_mode():
+   global is_on
+   
+   #Determine it is on or off
+   if is_on:
+      switch.config(image=off)      
+      multi_thread(Speak,'Deactivated voice mode')
+      multi_thread(MistyMode)
+    #   Speak('Deactivated voice mode')
+    #   MistyMode()
+      is_on = False
+   else:
+      switch.config(image = on)      
+      multi_thread(Speak, 'Voice Mode on')
+      multi_thread(VoiceMode)
+    #   Speak('Voice Mode on')
+    #   VoiceMode()
+      is_on = True
 
 app = Tk()
 app.geometry("1200x670-100-38")
@@ -202,6 +225,8 @@ app.title('Programmophone')
 app.minsize(1200, 670)
 
 logo = ImageTk.PhotoImage(Image.open("img/cpp.png").resize((30, 30), Image.ANTIALIAS))
+on = ImageTk.PhotoImage(Image.open("img/on.png").resize((60, 20), Image.ANTIALIAS))
+off = ImageTk.PhotoImage(Image.open("img/off.png").resize((60, 20), Image.ANTIALIAS))
 
 lb = Label(app, justify = RIGHT, compound = LEFT, padx = 10, text = "newfile.cpp",  font = Bfont, image = logo)
 
@@ -210,6 +235,7 @@ lb.pack()
 header = Menu(app)
 header.add_command(label='Open', command=Open)
 header.add_command(label='Save', command=Save)
+header.add_command(label='Save as', command=SaveAs)
 header.add_command(label='Compile', command=Compile)
 header.add_command(label='Run', command=Run)
 header.add_command(label='Close', command=sys.exit)
@@ -235,6 +261,9 @@ activity_log.pack(fill = BOTH, pady=(0,20))
 activity_log.bind("<Key>", lambda e: "break")
 
 a.config(command=activity_log.yview)
+
+switch = Button(lb,image=off,bd =0,command = button_mode, anchor=E)
+switch.pack(side=RIGHT, padx=(1070,0), anchor=E, expand=True)
 
 F2 = Frame(relief = SUNKEN, borderwidth=2)
 F2.pack(side=BOTTOM, fill=BOTH)
@@ -268,5 +297,5 @@ code_output.bind("<Key>", lambda e: "break")
 
 c.config(command = code_output.yview)
 
-multi_thread()
+multi_thread(Start)
 app.mainloop()
