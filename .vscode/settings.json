@@ -1,5 +1,6 @@
 {
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
-    "cmake.configureOnOpen": true
+    "cmake.configureOnOpen": true,
+    "python.pythonPath": "c:\\users\\hp\\appdata\\local\\programs\\python\\python37-32\\python.exe"
 }

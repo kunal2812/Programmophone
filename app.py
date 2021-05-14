@@ -22,9 +22,10 @@ recognizer = sr.Recognizer()
 is_on = False
 
 dict =  {"hash":'#', 'slash':'/', 'hyphen':'-', 'underscore':'_', 'backslash':'\\', 
-            'left angular':'<', 'right-angular':'>', 'asterisk':'*', 'exclamation':'!',
+            'less than':'<', 'greater than':'>', 'asterisk':'*', 'exclamation':'!',
              'ampersand':'&', 'modulo':'%', 'plus':'+', 'minus':'-', 'divide':'/', 'dot':'.',
-              'and':'&&', 'or':'||', 'bitwise and':'&', 'bitwise or':'|', 'xor': '^', 'percent':'%'
+              'and':'&&', 'or':'||', 'bitwise and':'&', 'bitwise or':'|', 'xor': '^', 'percent':'%',
+              'equalto':'=', 'equal to':'=', 'none':''
         }
 vocab = ['int', 'long long', 'unordered', 'map', 'set', 'pair', 'include', 'stdio',
             'bits/stdc++.h', 'unordered_map', 'tree', 'node', 'list', 'stack', 'queue', 
@@ -34,7 +35,8 @@ vocab = ['int', 'long long', 'unordered', 'map', 'set', 'pair', 'include', 'stdi
             'newline', 'tab', 'copy', 'line', 'open', 'save', 'compile', 'hey', 'misty', 'dequeue', 'bool',
             'true', 'false', 'using', 'namespace', 'std', 'stdio.h', 'class', 'public', 'private', 'void', 
             'main', 'pointer', 'cpp', 'py', 'txt', 'npos', 'null', 'substr', 'if', 'else', 'switch', 'case'
-            'xor', 'bitwise', 'and', 'or', 'd', 'll'
+            'xor', 'bitwise', 'and', 'or', 'd', 'll', 'equal to', 'equalto', 'while', 'for',  'else if', 'if', 'else'
+            ,'do', 'a', 'statement', 'condition', 'initialization'
         ]
 
 def Path(path):
@@ -73,6 +75,8 @@ def Action(command):
         Speak('Deactivated voice mode')
         switch.config(image=off)
         MistyMode()
+    elif 'evade' in command:
+        editor.mark_set('insert', 'insert+1c')
     elif 'include' in command:
         command = command.replace('include', '')
         command = command.replace(' ', '')
@@ -85,6 +89,66 @@ def Action(command):
     elif 'main' or 'men' in command:
         command = command + '(){\n\n}'
         editor.insert(INSERT, command)
+        editor.mark_set('insert', 'insert-1c')
+    elif 'else' and 'if' in command:
+        condition = Listen()
+        if condition is not None:
+            code = 'else if('
+            code = code + condition
+            code = code + '){\n\n}'
+            editor.insert(INSERT, code)            
+            editor.mark_set('insert', 'insert-1c')
+        else:
+            return
+    elif 'else' in command and 'if' not in command:
+        code = 'else{\n\n}'
+        editor.insert(INSERT, code)
+        editor.mark_set('insert', 'insert-1c')
+    elif "if" and "statement" in command:
+        condition = Listen()
+        if condition is not None:
+            code = 'if('
+            code = code + condition
+            code = code + '){\n\n}'
+            editor.insert(INSERT, code)            
+            editor.mark_set('insert', 'insert-1c')
+        else:
+            return
+    elif 'do' and 'while' in command:
+        condition = Listen()
+        if condition is not None:
+            code = 'do{\n\n}\nwhile('
+            code = code + condition
+            code = code + ')'
+            editor.insert(INSERT, code)            
+            editor.mark_set('insert', 'insert-1c')
+        else:
+            return
+    elif 'while' in command:
+        condition = Listen()
+        if condition is not None:
+            code = 'while('
+            code = code + condition
+            code = code + '){\n\n}'
+            editor.insert(INSERT, code)            
+            editor.mark_set('insert', 'insert-1c')
+        else:
+            return
+    elif 'for' and 'loop' in command:
+        Speak('Initialization')
+        p1 = Listen()
+        if p1 is None:
+            return
+        Speak('Condition')
+        p2 = Listen()
+        if p2 is None:
+            return
+        Speak('Updation')
+        p3 = Listen()
+        if p3 is None:
+            return
+        code = 'for(' + p1 + '; ' + p2 + '; ' + p3 + '){\n\n}'
+        editor.insert(INSERT, code)            
         editor.mark_set('insert', 'insert-1c')
     elif 'open' in command:
         OpenVoice(editor, lb)
@@ -101,13 +165,11 @@ def Action(command):
         Speak('Compiled and Ran successfully')
     else:
         return
-
     
 def multi_thread(target, *args):
     t = Thread(target = target, args=args)
     t.daemon=True
     t.start()
-
 
 def Start():
     MistyMode()
@@ -193,7 +255,7 @@ def Run():
     code_output.insert('1.0',  error)   
     if error is not None and is_on == True:
         # multi_thread(Speak,error)
-        Speak(error)
+        multi_thread(Speak, error)
     if output is not None and is_on == True:
         output = output.decode('utf-8')
         multi_thread(Speak, output)
@@ -201,23 +263,19 @@ def Run():
         # print(type(output))
 
 def button_mode():
-   global is_on
-   
-   #Determine it is on or off
-   if is_on:
-      switch.config(image=off)      
-      multi_thread(Speak,'Deactivated voice mode')
-      multi_thread(MistyMode)
-    #   Speak('Deactivated voice mode')
-    #   MistyMode()
-      is_on = False
-   else:
-      switch.config(image = on)      
-      multi_thread(Speak, 'Voice Mode on')
-      multi_thread(VoiceMode)
-    #   Speak('Voice Mode on')
-    #   VoiceMode()
-      is_on = True
+    global is_on
+
+    #Determine it is on or off
+    if is_on:
+        switch.config(image=off)        
+        is_on = False    
+        multi_thread(Speak, 'Deactivated voice mode')
+        multi_thread(MistyMode)
+    else:
+        switch.config(image = on)         
+        is_on = True     
+        multi_thread(Speak, 'Voice Mode on')
+        multi_thread(VoiceMode())
 
 app = Tk()
 app.geometry("1200x670-100-38")
@@ -282,6 +340,8 @@ b = Scrollbar(master = F2_left , orient = 'vertical')
 b.pack(side=RIGHT, fill = Y)
 
 editor = F1_left.text
+font = tkinter.font.Font(font=editor['font'])
+editor.config(tabs=font.measure('           '))
 
 code_input = Text(master = F2_left, font = Font, width=50, yscrollcommand = b.set, borderwidth=2)
 code_input.pack(fill = BOTH, padx=2)

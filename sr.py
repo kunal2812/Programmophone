@@ -5,6 +5,7 @@ from tkinter.filedialog import asksaveasfilename, askopenfilename
 import subprocess
 import os
 import time
+import sys
 from PIL import ImageTk, Image
 import pyttsx3
 import speech_recognition as sr
@@ -88,12 +89,3 @@ def OpenVoice(editor, lb):
     else:
         Speak('Try Again')
 
-'''
-Activate voice mode
-deactivate voice mode
-add a for loop
-initialize i to 0
-include <header>
-using namespace <std>
-<datatype> main
-'''
