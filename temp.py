@@ -1,54 +1,47 @@
-from tkinter import *
-import tkinter.ttk as ttk
-import tkinter.font
-from tkinter.filedialog import asksaveasfilename, askopenfilename
-import subprocess
-import os
-import sys
-import time
-from PIL import ImageTk, Image
-import pyttsx3
-import speech_recognition as sr
-from threading import *
-from LineNum import *
+import textdistance
+from spellchecker import SpellChecker
+from SR import *
 
-# Create an instance of window of frame
-win =Tk()
+dict =  {"hash":'#', 'slash':'/', 'hyphen':'-', 'underscore':'_', 'backslash':'\\', 
+            'less than':'<', 'greater than':'>', 'asterisk':'*', 'exclamation':'!',
+             'ampersand':'&', 'modulo':'%', 'plus':'+', 'minus':'-', 'divide':'/', 'dot':'.',
+              'and':'&&', ' or ':'||', 'bitwise and':'&', 'bitwise or':'|', 'xor': '^', 'percent':'%',
+              'equalto':'=', 'equal to':'=', 'none':'', 'left shift':'<<', 'right shift':'>>', 'not':'!'
+        }
+vocab = ['a', 'add', 'ampersand', 'and', 'array', 'backslash', 'bits/stdc++.h', 'bitwise', 
+         'bool', 'case', 'char', 'class', 'compile', 'condition', 'copy', 'cpp', 'd', 'dequeue', 
+         'divide', 'do', 'double', 'double slash', 'else', 'else', 'else', 'enum', 'equal to', 
+         'equalto', 'escape', 'evade', 'false', 'float', 'for', 'greater', 'hey', 'hyphen', 'if',
+         'include', 'initialization', 'int', 'iostream', 'left', 'less', 'line', 'list', 'll', 
+         'long', 'main', 'map', 'misty', 'modulo', 'multiply', 'namespace', 'newline', 'node', 
+         'npos', 'null', 'open', 'or', 'pair', 'plus', 'pointer', 'private', 'public', 'py', 
+         'queue', 'right', 'save', 'set', 'shift', 'slash', 'stack', 'statement', 'std', 'stdio', 
+         'stdio.h', 'stdlib.h', 'string', 'substr', 'substract', 'switch', 'tab', 'than', 'tree', 
+         'true', 'txt', 'underscore', 'unordered', 'unordered_map', 'unordered_set', 'unsigned',
+          'using', 'void', 'while', 'xor', 'exception', 'limits', 'new', 'typeinfo']
 
-# set Title
-win.title('On/Off Demonstration')
+# print(sorted(vocab))
+spell = SpellChecker()
+spell.word_frequency.load_text_file('vocab.txt')
+while True:
 
-# Set the Geometry
-win.geometry("600x400")
-win.resizable(0,0)
-#Create a variable to turn on the button initially
-is_on = True
+   command = Listen()
+   words = command.split(' ')
+   print(words)
+   ans = ''
+   # minterm = 100
 
-# Create Label to display the message
-label = Label(win,text = "Night Mode is On",bg= "white",fg ="black",font =("Poppins bold", 22))
-label.pack(pady = 20)
+   for word in words:
+      if word in vocab:
+         ans = ans + word + " "
+         continue
+      else:
+         ans = ans + spell.correction(word) + ' '
 
-# Define our switch function
-def button_mode():
-   global is_on
-   
-   #Determine it is on or off
-   if is_on:
-      on_.config(image=off)
-      label.config(text ="Day Mode is On",bg ="white", fg= "black")
-      is_on = False
-   else:
-      on_.config(image = on)
-      label.config(text ="Night Mode is On", fg="black")
-      is_on = True
+   print(ans)
 
-# Define Our Images
-on = ImageTk.PhotoImage(Image.open("img/on.png").resize((60, 20), Image.ANTIALIAS))
-off = ImageTk.PhotoImage(Image.open("img/off.png").resize((60, 20), Image.ANTIALIAS))
+   for key in dict.keys():
+      if key in ans:
+         ans = ans.replace(key, dict[key])
 
-# Create A Button
-on_= Button(win,image =on,bd =0,command = button_mode)
-on_.pack(pady = 50)
-
-#Keep Running the window
-win.mainloop()
+   print(ans)

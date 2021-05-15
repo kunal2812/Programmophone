@@ -5,3 +5,4 @@ a.exe
 .vscode
 Grid.py
 command.txt
+__pycache__

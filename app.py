@@ -25,7 +25,7 @@ dict =  {"hash":'#', 'slash':'/', 'hyphen':'-', 'underscore':'_', 'backslash':'\
             'less than':'<', 'greater than':'>', 'asterisk':'*', 'exclamation':'!',
              'ampersand':'&', 'modulo':'%', 'plus':'+', 'minus':'-', 'divide':'/', 'dot':'.',
               'and':'&&', 'or':'||', 'bitwise and':'&', 'bitwise or':'|', 'xor': '^', 'percent':'%',
-              'equalto':'=', 'equal to':'=', 'none':''
+              'equalto':'=', 'equal to':'=', 'none':'', 'left shift':'<<', 'right shift':'>>'
         }
 vocab = ['int', 'long long', 'unordered', 'map', 'set', 'pair', 'include', 'stdio',
             'bits/stdc++.h', 'unordered_map', 'tree', 'node', 'list', 'stack', 'queue', 
@@ -36,7 +36,7 @@ vocab = ['int', 'long long', 'unordered', 'map', 'set', 'pair', 'include', 'stdi
             'true', 'false', 'using', 'namespace', 'std', 'stdio.h', 'class', 'public', 'private', 'void', 
             'main', 'pointer', 'cpp', 'py', 'txt', 'npos', 'null', 'substr', 'if', 'else', 'switch', 'case'
             'xor', 'bitwise', 'and', 'or', 'd', 'll', 'equal to', 'equalto', 'while', 'for',  'else if', 'if', 'else'
-            ,'do', 'a', 'statement', 'condition', 'initialization'
+            ,'do', 'a', 'statement', 'condition', 'initialization', 'left', 'right', 'shift'
         ]
 
 def Path(path):
@@ -46,7 +46,6 @@ def Path(path):
 def MistyMode():
     command = Listen()
     if command is not None:
-        command = command.lower()
         if 'hey' and 'misty' in command:
             command = command.replace('hey', '')
             command = command.replace('misty', '')
@@ -59,7 +58,6 @@ def MistyMode():
 def VoiceMode():
     command = Listen()
     if command is not None:
-        command = command.lower()
         Action(command)
         VoiceMode()
     else:
@@ -90,6 +88,11 @@ def Action(command):
         command = command + '(){\n\n}'
         editor.insert(INSERT, command)
         editor.mark_set('insert', 'insert-1c')
+    elif 'declare' in command:
+        words = command.split(' ')
+        code = command.replace(words[0], '')
+        code = code+';\n'
+        editor.insert(INSERT, code)
     elif 'else' and 'if' in command:
         condition = Listen()
         if condition is not None:
@@ -262,6 +265,57 @@ def Run():
         # Speak(output)
         # print(type(output))
 
+def SaveVoice(file_path, editor, lb):
+    if file_path == '':
+        p = 'files/'
+        Speak('What name would you like me to give to the file ?')
+        command = Listen()
+        command = command.lower()
+        command = command.replace('dot', '.')
+        command = command.replace(' ', '')
+        
+        Speak('I am saving it as ')
+        for char in command:
+            Speak(char)
+        Speak('Say yes to confirm and no to try again')
+        cmd = Listen()
+        cmd = cmd.lower()
+        if 'yes' in cmd:
+            path = os.path.join(p, command)
+        else:
+            SaveVoice(file_path, editor, lb)
+    else:
+        path = file_path
+    with open(path, 'w') as file:
+        code = editor.get('1.0', END)
+        file.write(code)
+        Path(path)    
+    if file_path != '':
+        lb.config(text = file_path)
+
+def OpenVoice(editor, lb):
+    p = 'files/'
+    Speak('Which one of the following would you like me to open ?')
+    files = os.listdir(p)
+    for file in files:
+        Speak(file)
+        time.sleep(2)
+    command = Listen()
+    command = command.lower()
+    command = command.replace('dot', '.')
+    command = command.replace(' ', '')
+    path = os.path.join(p, command)
+    if os.path.isfile(path):
+        with open(path, 'r') as file:
+            code = file.read()
+            editor.delete('1.0', END)
+            editor.insert('1.0', code)
+            Path(path)
+        if file_path != '':
+            lb.config(text = file_path)
+    else:
+        Speak('Try Again')
+
 def button_mode():
     global is_on
 
@@ -282,9 +336,9 @@ app.geometry("1200x670-100-38")
 app.title('Programmophone')
 app.minsize(1200, 670)
 
-logo = ImageTk.PhotoImage(Image.open("img/cpp.png").resize((30, 30), Image.ANTIALIAS))
-on = ImageTk.PhotoImage(Image.open("img/on.png").resize((60, 20), Image.ANTIALIAS))
-off = ImageTk.PhotoImage(Image.open("img/off.png").resize((60, 20), Image.ANTIALIAS))
+logo = ImageTk.PhotoImage(Image.open("assets/cpp.png").resize((30, 30), Image.ANTIALIAS))
+on = ImageTk.PhotoImage(Image.open("assets/on.png").resize((60, 20), Image.ANTIALIAS))
+off = ImageTk.PhotoImage(Image.open("assets/off.png").resize((60, 20), Image.ANTIALIAS))
 
 lb = Label(app, justify = RIGHT, compound = LEFT, padx = 10, text = "newfile.cpp",  font = Bfont, image = logo)
 
