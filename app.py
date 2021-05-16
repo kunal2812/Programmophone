@@ -16,63 +16,57 @@ from SR import *
 Font = ("Comic Sans MS", "10", "normal")
 Bfont = ("Comic Sans MS", "10", "bold")
 file_path = ''
-engine = pyttsx3.init()
-engine.setProperty('rate', 100)
 recognizer = sr.Recognizer()
 is_on = False
 
 dict =  {"hash":'#', 'slash':'/', 'hyphen':'-', 'underscore':'_', 'backslash':'\\', 
             'less than':'<', 'greater than':'>', 'asterisk':'*', 'exclamation':'!',
-             'ampersand':'&', 'modulo':'%', 'plus':'+', 'minus':'-', 'divide':'/', 'dot':'.',
-              'and':'&&', 'or':'||', 'bitwise and':'&', 'bitwise or':'|', 'xor': '^', 'percent':'%',
-              'equalto':'=', 'equal to':'=', 'none':'', 'left shift':'<<', 'right shift':'>>'
+            'ampersand':'&', 'modulo':'%', 'plus':'+', 'minus':'-', 'divide':'/', 'dot':'.',
+            'and':'&&', 'or':'||', 'bitwise and':'&', 'bitwise or':'|', 'xor': '^', 'percent':'%',
+            'equalto':'=', 'equal to':'=', 'none':'', 'left shift':'<<', 'right shift':'>>', 'single quote':"''",
+            'single quotes':"''", "double quote":"\"\"", "double quotes":"\"\"", 'not':'!', 'single coat':"''",
+            'single coats':"''", "double coat":"\"\"", "double coats":"\"\"", 'bull':'bool','vivid':'evade', 
+            'entmen':'int main', 'see out':'print', 'cout':'print', 'see in':'input', 'cin':'input', 'new line':'newline',
+            'ent':'int', 'man':'main', 'men':'main', 'space':' ', 'entertain':'main'
         }
-vocab = ['int', 'long long', 'unordered', 'map', 'set', 'pair', 'include', 'stdio',
-            'bits/stdc++.h', 'unordered_map', 'tree', 'node', 'list', 'stack', 'queue', 
-            'double', 'float', 'enum', 'unsigned', 'unordered_set', 'iostream', 'stdlib.h',
-            'string', 'char', 'array', 'slash', 'backslash', 'ampersand', 'underscore', 
-            'divide', 'plus', 'add', 'substract', 'multiply', 'modulo', 'hyphen', 'double slash',
-            'newline', 'tab', 'copy', 'line', 'open', 'save', 'compile', 'hey', 'misty', 'dequeue', 'bool',
-            'true', 'false', 'using', 'namespace', 'std', 'stdio.h', 'class', 'public', 'private', 'void', 
-            'main', 'pointer', 'cpp', 'py', 'txt', 'npos', 'null', 'substr', 'if', 'else', 'switch', 'case'
-            'xor', 'bitwise', 'and', 'or', 'd', 'll', 'equal to', 'equalto', 'while', 'for',  'else if', 'if', 'else'
-            ,'do', 'a', 'statement', 'condition', 'initialization', 'left', 'right', 'shift'
-        ]
 
 def Path(path):
     global file_path
     file_path = path
 
 def MistyMode():
-    command = Listen()
-    if command is not None:
-        if 'hey' and 'misty' in command:
-            command = command.replace('hey', '')
-            command = command.replace('misty', '')
-            Action(command)
-        else:
-            MistyMode()
-    else:
-        MistyMode()
+    global is_on
+    while is_on==False:
+        command = Listen()
+        if command is not None:
+            if 'hey' and 'misty' in command:
+                command = command.replace('hey', '')
+                command = command.replace('misty', '')
+                Action(command)
+        if is_on:
+            sys.exit()
+    return
 
 def VoiceMode():
-    command = Listen()
-    if command is not None:
-        Action(command)
-        VoiceMode()
-    else:
-        VoiceMode()
+    global is_on
+    while is_on==True:
+        command = Listen()
+        if command is not None:
+            Action(command)
+        if is_on==False:
+            sys.exit()
+    return
 
 def Action(command):
     print(command)
     if 'activate' and 'voice' in command:
         Speak('Voice Mode on')
         switch.config(image = on)
-        VoiceMode()
-    if 'deactivate' and 'voice' in command:        
+        multi_thread(VoiceMode)
+    elif 'deactivate' and 'voice' in command:        
         Speak('Deactivated voice mode')
         switch.config(image=off)
-        MistyMode()
+        multi_thread(MistyMode)
     elif 'evade' in command:
         editor.mark_set('insert', 'insert+1c')
     elif 'include' in command:
@@ -82,17 +76,42 @@ def Action(command):
         header = header+command+'>\n'
         editor.insert(INSERT, header)
     elif 'namespace' in command:
-        namespace = command + ';\n'
+        words = command.split(' ')
+        print(words)
+        namespace = 'using namespace ' + words[len(words)-2] + ';\n'
         editor.insert(INSERT, namespace)
-    elif 'main' or 'men' in command:
-        command = command + '(){\n\n}'
-        editor.insert(INSERT, command)
-        editor.mark_set('insert', 'insert-1c')
     elif 'declare' in command:
         words = command.split(' ')
         code = command.replace(words[0], '')
         code = code+';\n'
         editor.insert(INSERT, code)
+    elif 'print' and 'newline' in command:
+        arguments = Listen()
+        if arguments is None:
+            return
+        code = 'std::cout << ' + arguments + '<< endl;\n'
+        editor.insert(INSERT, code)
+    elif 'print' in command:
+        arguments = Listen()
+        if arguments is None:
+            return
+        arguments.replace(' ', '<<')
+        code = 'std::cout << ' + arguments + ';\n'
+        editor.insert(INSERT, code)
+    elif 'input' in command:
+        arguments = Listen()
+        if arguments is None:
+            return
+        arguments.replace(' ', '>>')
+        code = 'std::cin >> ' + arguments + ';\n'
+    elif 'dot' or '.' in command:
+        arguments = Listen()
+        if arguments is not None:
+            command = command + '('
+            command = command + arguments + ');\n'
+            editor.insert('INSERT', command)
+        else:
+            sys.exit()
     elif 'else' and 'if' in command:
         condition = Listen()
         if condition is not None:
@@ -102,7 +121,7 @@ def Action(command):
             editor.insert(INSERT, code)            
             editor.mark_set('insert', 'insert-1c')
         else:
-            return
+            sys.exit()
     elif 'else' in command and 'if' not in command:
         code = 'else{\n\n}'
         editor.insert(INSERT, code)
@@ -153,6 +172,10 @@ def Action(command):
         code = 'for(' + p1 + '; ' + p2 + '; ' + p3 + '){\n\n}'
         editor.insert(INSERT, code)            
         editor.mark_set('insert', 'insert-1c')
+    elif 'main' in command:
+        command = command + '(){\n\n}'
+        editor.insert(INSERT, command)
+        editor.mark_set('insert', 'insert-1c')
     elif 'open' in command:
         OpenVoice(editor, lb)
     elif 'save' in command:
@@ -171,6 +194,7 @@ def Action(command):
     
 def multi_thread(target, *args):
     t = Thread(target = target, args=args)
+    print(active_count())
     t.daemon=True
     t.start()
 
@@ -230,7 +254,6 @@ def Compile():
         #     if err[:t].isdigit()==False:
         #         err.replace(err[:t],'')
         multi_thread(Speak, error)
-        # Speak(error)
 
 def Run():
     RemovePrev()
@@ -257,13 +280,10 @@ def Run():
     code_output.insert('1.0', output)
     code_output.insert('1.0',  error)   
     if error is not None and is_on == True:
-        # multi_thread(Speak,error)
         multi_thread(Speak, error)
     if output is not None and is_on == True:
         output = output.decode('utf-8')
         multi_thread(Speak, output)
-        # Speak(output)
-        # print(type(output))
 
 def SaveVoice(file_path, editor, lb):
     if file_path == '':
@@ -319,7 +339,6 @@ def OpenVoice(editor, lb):
 def button_mode():
     global is_on
 
-    #Determine it is on or off
     if is_on:
         switch.config(image=off)        
         is_on = False    
@@ -329,7 +348,7 @@ def button_mode():
         switch.config(image = on)         
         is_on = True     
         multi_thread(Speak, 'Voice Mode on')
-        multi_thread(VoiceMode())
+        multi_thread(VoiceMode)
 
 app = Tk()
 app.geometry("1200x670-100-38")
@@ -396,6 +415,7 @@ b.pack(side=RIGHT, fill = Y)
 editor = F1_left.text
 font = tkinter.font.Font(font=editor['font'])
 editor.config(tabs=font.measure('           '))
+editor.see(INSERT)
 
 code_input = Text(master = F2_left, font = Font, width=50, yscrollcommand = b.set, borderwidth=2)
 code_input.pack(fill = BOTH, padx=2)
