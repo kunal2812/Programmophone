@@ -89,3 +89,9 @@ class CustomFrame(Frame):
     def _on_change(self, event):
         self._config_pos(event)
         self.linenumbers.redraw()
+
+
+'''
+Source - https://stackoverflow.com/questions/16369470/tkinter-adding-line-number-to-text-widget
+Used with minor modifications
+'''

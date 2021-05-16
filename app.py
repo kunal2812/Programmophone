@@ -7,28 +7,16 @@ import os
 import sys
 import time
 from PIL import ImageTk, Image
-import pyttsx3
 import speech_recognition as sr
 from threading import *
 from LineNum import *
-from SR import *
+from sr import *
 
 Font = ("Comic Sans MS", "10", "normal")
 Bfont = ("Comic Sans MS", "10", "bold")
 file_path = ''
 recognizer = sr.Recognizer()
 is_on = False
-
-dict =  {"hash":'#', 'slash':'/', 'hyphen':'-', 'underscore':'_', 'backslash':'\\', 
-            'less than':'<', 'greater than':'>', 'asterisk':'*', 'exclamation':'!',
-            'ampersand':'&', 'modulo':'%', 'plus':'+', 'minus':'-', 'divide':'/', 'dot':'.',
-            'and':'&&', 'or':'||', 'bitwise and':'&', 'bitwise or':'|', 'xor': '^', 'percent':'%',
-            'equalto':'=', 'equal to':'=', 'none':'', 'left shift':'<<', 'right shift':'>>', 'single quote':"''",
-            'single quotes':"''", "double quote":"\"\"", "double quotes":"\"\"", 'not':'!', 'single coat':"''",
-            'single coats':"''", "double coat":"\"\"", "double coats":"\"\"", 'bull':'bool','vivid':'evade', 
-            'entmen':'int main', 'see out':'print', 'cout':'print', 'see in':'input', 'cin':'input', 'new line':'newline',
-            'ent':'int', 'man':'main', 'men':'main', 'space':' ', 'entertain':'main'
-        }
 
 def Path(path):
     global file_path
@@ -57,19 +45,122 @@ def VoiceMode():
             sys.exit()
     return
 
-def Action(command):
-    print(command)
-    if 'activate' and 'voice' in command:
+
+def Control(command):
+    global is_on
+    if 'activate' in command:
         Speak('Voice Mode on')
+        is_on = True
         switch.config(image = on)
         multi_thread(VoiceMode)
-    elif 'deactivate' and 'voice' in command:        
+    elif 'deactivate'in command:
+        is_on = False      
         Speak('Deactivated voice mode')
         switch.config(image=off)
         multi_thread(MistyMode)
-    elif 'evade' in command:
-        editor.mark_set('insert', 'insert+1c')
-    elif 'include' in command:
+    elif 'open' in command:
+        OpenVoice(editor, lb)
+    elif 'save' in command:
+        SaveVoice(file_path, editor, lb)
+    elif 'compile' in command:
+        Compile()
+        Speak('Compiled successfully')
+    elif 'close' or 'exit' in command:
+        Speak('Exiting....')
+        sys.exit()
+    elif 'run' or ('compile' and 'run') in command:
+        Run()
+        Speak('Compiled and Ran successfully')
+
+def TellPos():
+    pos = "at line "
+    pos = pos + editor.index(INSERT)
+    pos = pos.replace('.', ' and column ')
+    multi_thread(Speak,pos)
+
+def DeletePosLeft(index):
+    index = 'insert-'+index
+    editor.delete(index, INSERT)
+
+def DeletePosRight(index):
+    index = 'insert+'+index
+    editor.delete(INSERT, index)
+
+def DeletePosAll(index):
+    editor.delete('1.0',END)
+
+def DeletePos(command):
+    words = command.split(' ')
+    t = len(words)
+    if t==3:
+        pos = 1
+    else:
+        pos = words[t-2]
+    index = str(pos) + 'c'
+    dict = {'left':DeletePosLeft, 'right':DeletePosRight, 'all':DeletePosAll}
+    for item in dict.keys():
+        if item in command:
+            dict[item](index)
+
+def MovePosUp(command,pos):
+    index = 'insert-' + str(pos) + 'l'
+    editor.mark_set(INSERT, index)
+
+def MovePosTo(command,pos): #Incomplete
+    words = command.split(' ')
+    print(words)
+    pos = []
+    for word in words:
+        if word.isdigit()==True:
+            pos+=word
+    print(pos)
+    index = pos[0]+'.'+pos[1]
+    print(index)
+    editor.mark_set(INSERT, index)
+
+def MovePosLeft(command, pos):
+    index = 'insert-' + str(pos) + 'c'
+    editor.mark_set(INSERT, index)
+
+def MovePosRight(command, pos):
+    index = 'insert+' + str(pos) + 'c'
+    editor.mark_set(INSERT, index)
+
+def MovePosDown(command, pos):
+    index = 'insert+' + str(pos) + 'l'
+    editor.mark_set(INSERT, index)
+
+def MovePos(command):
+    words = command.split(' ')
+    t = len(words)
+    if t==3:
+        pos = 1
+    else:
+        pos = words[t-2]
+    dict = {'up':MovePosUp, 'line':MovePosTo, 'column':MovePosTo, 'left':MovePosLeft,'right':MovePosRight,'down':MovePosDown}
+    for item in dict.keys():
+        if item in command:
+            dict[item](command,pos)
+
+def CursorControls(command):
+    dict = {'position':TellPos, 'remove':DeletePos, 'move':MovePos}
+    for item in dict.keys():
+        if item in command:
+            dict[item](command)
+
+def Action(command):
+    print(command)
+    control = ['activate', 'deactivate', 'open', 'save', 'compile', 'close', 'run']
+    cursor = ['move', 'remove', 'position']
+    for item in control:
+        if item in command:
+            Control(command)
+            return
+    for item in cursor:
+        if item in command:
+            CursorControls(command)
+            return
+    if 'include' in command:
         command = command.replace('include', '')
         command = command.replace(' ', '')
         header = "#include<"
@@ -176,25 +267,12 @@ def Action(command):
         command = command + '(){\n\n}'
         editor.insert(INSERT, command)
         editor.mark_set('insert', 'insert-1c')
-    elif 'open' in command:
-        OpenVoice(editor, lb)
-    elif 'save' in command:
-        SaveVoice(file_path, editor, lb)
-    elif 'compile' in command:
-        Compile()
-        Speak('Compiled successfully')
-    elif 'close' or 'exit' in command:
-        Speak('Exiting....')
-        sys.exit()
-    elif 'run' or ('compile' and 'run') in command:
-        Run()
-        Speak('Compiled and Ran successfully')
     else:
         return
     
 def multi_thread(target, *args):
     t = Thread(target = target, args=args)
-    print(active_count())
+    # print(active_count())
     t.daemon=True
     t.start()
 
@@ -319,12 +397,15 @@ def OpenVoice(editor, lb):
     files = os.listdir(p)
     for file in files:
         Speak(file)
-        time.sleep(2)
+        time.sleep(1)
     command = Listen()
-    command = command.lower()
-    command = command.replace('dot', '.')
-    command = command.replace(' ', '')
-    path = os.path.join(p, command)
+    if command is not None:
+        command = command.lower()
+        command = command.replace('dot', '.')
+        command = command.replace(' ', '')
+        path = os.path.join(p, command)
+    else:
+        return
     if os.path.isfile(path):
         with open(path, 'r') as file:
             code = file.read()
