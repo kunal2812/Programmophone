@@ -17,6 +17,7 @@ Bfont = ("Comic Sans MS", "10", "bold")
 file_path = ''
 recognizer = sr.Recognizer()
 is_on = False
+count = 1
 
 def Path(path):
     global file_path
@@ -25,6 +26,7 @@ def Path(path):
 def MistyMode():
     global is_on
     while is_on==False:
+        # print(is_on)
         command = Listen()
         if command is not None:
             if 'hey' and 'misty' in command:
@@ -38,6 +40,7 @@ def MistyMode():
 def VoiceMode():
     global is_on
     while is_on==True:
+        # print(is_on)
         command = Listen()
         if command is not None:
             Action(command)
@@ -45,32 +48,30 @@ def VoiceMode():
             sys.exit()
     return
 
+def UpdateActivity(edit):
+    global count    
+    activity_log.config(state='normal')
+    activity_log.insert(END, edit)
+    activity_log.config(state='disabled')
+    count+=1
 
-def Control(command):
+def Activate():
     global is_on
-    if 'activate' in command:
-        Speak('Voice Mode on')
-        is_on = True
-        switch.config(image = on)
-        multi_thread(VoiceMode)
-    elif 'deactivate'in command:
-        is_on = False      
-        Speak('Deactivated voice mode')
-        switch.config(image=off)
-        multi_thread(MistyMode)
-    elif 'open' in command:
-        OpenVoice(editor, lb)
-    elif 'save' in command:
-        SaveVoice(file_path, editor, lb)
-    elif 'compile' in command:
-        Compile()
-        Speak('Compiled successfully')
-    elif 'close' or 'exit' in command:
-        Speak('Exiting....')
-        sys.exit()
-    elif 'run' or ('compile' and 'run') in command:
-        Run()
-        Speak('Compiled and Ran successfully')
+    Speak('Voice Mode on')
+    is_on = True
+    switch.config(image = on)
+    multi_thread(VoiceMode)
+
+def Deactivate():
+    global is_on
+    is_on = False      
+    Speak('Deactivated voice mode')
+    switch.config(image=off)
+    multi_thread(MistyMode)
+
+def Close():    
+    Speak('Exiting....')
+    sys.exit()
 
 def TellPos():
     pos = "at line "
@@ -80,14 +81,25 @@ def TellPos():
 
 def DeletePosLeft(index):
     index = 'insert-'+index
+    deleted = editor.get(index, INSERT)
+    pos = editor.index(INSERT)
     editor.delete(index, INSERT)
+    edit = str(count)+ '::' + pos + '->' + 'Deleted ' + index[0] + ' characters towards left ' + deleted + '\n'
+    UpdateActivity(edit)
 
 def DeletePosRight(index):
     index = 'insert+'+index
+    pos = editor.index(INSERT)
+    deleted = editor.get(INSERT, index)
     editor.delete(INSERT, index)
+    edit = str(count)+ '::' + pos + '->' + 'Deleted ' + index[0]+ ' characters towards right ' + deleted + '\n'
+    UpdateActivity(edit)
 
 def DeletePosAll(index):
+    pos = editor.index(INSERT)
     editor.delete('1.0',END)
+    edit = str(count)+ '::' + pos + '->' + 'Cleared editor\n'
+    UpdateActivity(edit)
 
 def DeletePos(command):
     words = command.split(' ')
@@ -106,16 +118,24 @@ def MovePosUp(command,pos):
     index = 'insert-' + str(pos) + 'l'
     editor.mark_set(INSERT, index)
 
-def MovePosTo(command,pos): #Incomplete
+def MovePosTo(command,pos):
+    print('Here')
     words = command.split(' ')
-    print(words)
+    # print(words)
     pos = []
     for word in words:
         if word.isdigit()==True:
             pos+=word
-    print(pos)
-    index = pos[0]+'.'+pos[1]
-    print(index)
+    # print(pos)
+    if 'line' not in command:
+        ind = editor.index(INSERT)
+        index = ind.split('.')
+        index = index[0] + pos[0]
+    elif 'column' not in command:
+        index = pos[0]+'.'+'0'
+    else:
+        index = pos[0]+'.'+pos[1]
+        # print(index)
     editor.mark_set(INSERT, index)
 
 def MovePosLeft(command, pos):
@@ -141,132 +161,218 @@ def MovePos(command):
     for item in dict.keys():
         if item in command:
             dict[item](command,pos)
+            break
 
-def CursorControls(command):
-    dict = {'position':TellPos, 'remove':DeletePos, 'move':MovePos}
-    for item in dict.keys():
-        if item in command:
-            dict[item](command)
+def IncludeHeader(command):
+    command = command.replace('include', '')
+    command = command.replace(' ', '')
+    header = "#include<"+command+'>\n'
+    pos = editor.index(INSERT)
+    editor.insert(INSERT, header)
+    edit = str(count)+ '::' + pos + '-> '  + 'Included ' + command + ' header file\n'
+    UpdateActivity(edit)
+
+def Namespace(command):
+    words = command.split(' ')
+    # print(words)
+    namespace = 'using namespace ' + words[len(words)-2] + ';\n'
+    pos = editor.index(INSERT)
+    editor.insert(INSERT, namespace)
+    edit = str(count)+ '::' + pos + '-> ' + 'You are now using namespace ' + words[len(words)-2] + ' \n'
+    UpdateActivity(edit)
+
+def DeclareVar(command):
+    words = command.split(' ')
+    code = command.replace(words[0], '')
+    edit = code
+    code = code+';\n'
+    pos = editor.index(INSERT)
+    editor.insert(INSERT, code)
+    edit = str(count)+ '::' + pos + '-> ' + 'Declared variable of data type ' + code + ' \n'
+    UpdateActivity(edit)
+
+def Print(command):
+    command = command.replace('print ','')
+    arg = command.split(' ')    
+    code = 'std::cout '
+    edit = ''
+    pos = editor.index(INSERT)
+    for item in arg:
+        if item is not '':
+            edit = edit + item + ' '
+            code = code + ' << ' + item
+    code += ';\n'
+    editor.insert(INSERT, code)
+    edit = str(count)+ '::' + pos + '-> ' + 'Printing ' + edit + ' \n'
+    UpdateActivity(edit)
+
+def Newline(command):
+    code = 'std::cout << endl;\n'
+    pos = editor.index(INSERT)
+    editor.insert(INSERT, code)
+    edit = str(count)+ '::' + pos + '-> ' + 'Added a newline ' + '\n'
+    UpdateActivity(edit)
+
+def Input(command):
+    command = command.replace('input ','')
+    arg = command.split(' ')
+    print(arg) 
+    edit = ''
+    code = 'std::cin '
+    for item in arg:
+        if item is not '':
+            edit = edit + item + ' '
+            code = code + ' >> ' +item
+    code += ';\n'
+    pos = editor.index(INSERT)
+    editor.insert(INSERT, code)
+    edit = str(count)+ '::' + pos + '-> ' + 'Inputting ' + edit +  '\n'
+    UpdateActivity(edit)
+
+def For(command):
+    Speak('Initialization')
+    p1 = Listen()
+    p1 = p1.replace(' ', '')
+    if p1 is None:
+        return
+    Speak('Condition')
+    p2 = Listen()
+    p2 = p2.replace(' ', '')
+    if p2 is None:
+        return
+    Speak('Updation')
+    p3 = Listen()
+    p3 = p3.replace(' ', '')
+    if p3 is None:
+        return
+    p1 = p1.replace('none','')
+    p2 = p2.replace('none','')
+    p3 = p3.replace('none','')
+    code = 'for(' + p1 + '; ' + p2 + '; ' + p3 + '){\n\n}'
+    pos = editor.index(INSERT)
+    editor.insert(INSERT, code)            
+    editor.mark_set('insert', 'insert-1l')
+    edit = str(count)+ '::' + pos + '-> ' + 'Added a for loop while ' + p2 +  '\n'
+    UpdateActivity(edit)
+
+def ElseIf(command):
+    condition = Listen()
+    condition = condition.replace(' ', '')
+    if condition is not None:
+        code = 'else if('
+        code = code + condition
+        code = code + '){\n\n}'
+        pos = editor.index(INSERT)
+        editor.insert(INSERT, code)            
+        editor.mark_set('insert', 'insert-1l')
+        edit = str(count)+ '::' + pos + '-> ' + 'Added a else if block, where condition is ' + condition +  '\n'
+        UpdateActivity(edit)
+
+def Else(command):
+    code = 'else{\n\n}'
+    pos = editor.index(INSERT)
+    editor.insert(INSERT, code)
+    editor.mark_set('insert', 'insert-1l')
+    edit = str(count)+ '::' + pos + '-> ' + 'Added a else block' +  '\n'
+    UpdateActivity(edit)
+
+def If(command):
+    condition = Listen()
+    condition = condition.replace(' ', '')
+    if condition is not None:
+        code = 'if('
+        code = code + condition
+        code = code + '){\n\n}'
+        pos = editor.index(INSERT)
+        editor.insert(INSERT, code)            
+        editor.mark_set('insert', 'insert-1l')
+        edit = str(count)+ '::' + pos + '-> ' + 'Added a else if block, where condition is ' + condition +  '\n'
+        UpdateActivity(edit)
+    else:
+        return
+
+def DoWhile(command):
+    condition = Listen()
+    condition = condition.replace(' ', '')
+    if condition is not None:
+        code = 'do{\n\n}\nwhile('
+        code = code + condition
+        code = code + ')'
+        pos = editor.index(INSERT)
+        editor.insert(INSERT, code)
+        edit = str(count)+ '::' + pos + '-> ' + 'Added a do while loop with condition ' + condition +  '\n'           
+        editor.mark_set('insert', 'insert-2l')
+        UpdateActivity(edit)
+    else:
+        return  
+
+def Main(command):
+    command = command + '(){\n\n}'
+    pos = editor.index(INSERT)
+    editor.insert(INSERT, command)
+    edit = str(count)+ '::' + pos + '-> ' + 'Added main function ' +  '\n'
+    editor.mark_set('insert', 'insert-1l')
+    UpdateActivity(edit)
+
+def While(command):
+    condition = Listen()
+    condition = condition.replace(' ', '')
+    if condition is not None:
+        code = 'while('
+        code = code + condition
+        code = code + '){\n\n}'
+        pos = editor.index(INSERT)
+        editor.insert(INSERT, code)       
+        edit = str(count)+ '::' + pos + '-> ' + 'Added a while loop here with condiiton ' +  condition + '\n'     
+        editor.mark_set('insert', 'insert-1l')
+        UpdateActivity(edit)
+
+def Brackets(command):
+    if 'square' in command:
+        code = '[]'
+    elif 'round' in command:
+        code = '()'
+    elif 'curly' in command:
+        code = '{}'
+    editor.insert(INSERT, code)
+    editor.mark_set('insert','insert-1c')
+def Extra(command):
+    pos = editor.index(INSERT)
+    editor.insert(INSERT, command)
+    edit = str(count)+ '::' + pos + '-> ' + 'Adding ' +  command + '\n'
+    UpdateActivity(edit)
 
 def Action(command):
     print(command)
-    control = ['activate', 'deactivate', 'open', 'save', 'compile', 'close', 'run']
-    cursor = ['move', 'remove', 'position']
-    for item in control:
+    control = {'deactivate':Deactivate, 'activate':Activate, 'open':OpenVoice, 'save':SaveVoice, 'compile':Compile, 'close':Close, 'exit':Close, 'run':Run}
+    cursor = {'position':TellPos, 'remove':DeletePos, 'move':MovePos}
+    keywords = {'include':IncludeHeader, 'namespace':Namespace, 'main':Main, 'declare':DeclareVar, 'print':Print, 'newline':Newline, 'input':Input,
+                 'for':For, 'else if':ElseIf, 'else statement':Else, 'if statement':If, 'do while':DoWhile, 'while':While, 'brackets':Brackets, '':Extra
+                }
+    for item in control.keys():
         if item in command:
-            Control(command)
+            print('control')
+            control[item]()
             return
-    for item in cursor:
+    for item in cursor.keys():
         if item in command:
-            CursorControls(command)
+            print('cursor')
+            cursor[item](command)
+            TellPos()
             return
-    if 'include' in command:
-        command = command.replace('include', '')
-        command = command.replace(' ', '')
-        header = "#include<"
-        header = header+command+'>\n'
-        editor.insert(INSERT, header)
-    elif 'namespace' in command:
-        words = command.split(' ')
-        print(words)
-        namespace = 'using namespace ' + words[len(words)-2] + ';\n'
-        editor.insert(INSERT, namespace)
-    elif 'declare' in command:
-        words = command.split(' ')
-        code = command.replace(words[0], '')
-        code = code+';\n'
-        editor.insert(INSERT, code)
-    elif 'print' and 'newline' in command:
-        arguments = Listen()
-        if arguments is None:
+    for item in keywords.keys():
+        if item in command:
+            print(item)
+            keywords[item](command)
+            TellPos()
             return
-        code = 'std::cout << ' + arguments + '<< endl;\n'
-        editor.insert(INSERT, code)
-    elif 'print' in command:
-        arguments = Listen()
-        if arguments is None:
-            return
-        arguments.replace(' ', '<<')
-        code = 'std::cout << ' + arguments + ';\n'
-        editor.insert(INSERT, code)
-    elif 'input' in command:
-        arguments = Listen()
-        if arguments is None:
-            return
-        arguments.replace(' ', '>>')
-        code = 'std::cin >> ' + arguments + ';\n'
-    elif 'dot' or '.' in command:
+
+    if '.' in command:
         arguments = Listen()
         if arguments is not None:
             command = command + '('
             command = command + arguments + ');\n'
             editor.insert('INSERT', command)
-        else:
-            sys.exit()
-    elif 'else' and 'if' in command:
-        condition = Listen()
-        if condition is not None:
-            code = 'else if('
-            code = code + condition
-            code = code + '){\n\n}'
-            editor.insert(INSERT, code)            
-            editor.mark_set('insert', 'insert-1c')
-        else:
-            sys.exit()
-    elif 'else' in command and 'if' not in command:
-        code = 'else{\n\n}'
-        editor.insert(INSERT, code)
-        editor.mark_set('insert', 'insert-1c')
-    elif "if" and "statement" in command:
-        condition = Listen()
-        if condition is not None:
-            code = 'if('
-            code = code + condition
-            code = code + '){\n\n}'
-            editor.insert(INSERT, code)            
-            editor.mark_set('insert', 'insert-1c')
-        else:
-            return
-    elif 'do' and 'while' in command:
-        condition = Listen()
-        if condition is not None:
-            code = 'do{\n\n}\nwhile('
-            code = code + condition
-            code = code + ')'
-            editor.insert(INSERT, code)            
-            editor.mark_set('insert', 'insert-1c')
-        else:
-            return
-    elif 'while' in command:
-        condition = Listen()
-        if condition is not None:
-            code = 'while('
-            code = code + condition
-            code = code + '){\n\n}'
-            editor.insert(INSERT, code)            
-            editor.mark_set('insert', 'insert-1c')
-        else:
-            return
-    elif 'for' and 'loop' in command:
-        Speak('Initialization')
-        p1 = Listen()
-        if p1 is None:
-            return
-        Speak('Condition')
-        p2 = Listen()
-        if p2 is None:
-            return
-        Speak('Updation')
-        p3 = Listen()
-        if p3 is None:
-            return
-        code = 'for(' + p1 + '; ' + p2 + '; ' + p3 + '){\n\n}'
-        editor.insert(INSERT, code)            
-        editor.mark_set('insert', 'insert-1c')
-    elif 'main' in command:
-        command = command + '(){\n\n}'
-        editor.insert(INSERT, command)
-        editor.mark_set('insert', 'insert-1c')
     else:
         return
     
@@ -314,9 +420,7 @@ def SaveAs():
 def Compile():
     RemovePrev()
     if file_path == '':
-        save_prompt = Toplevel()
-        text = Label(save_prompt, text='Please save your code')
-        text.pack()
+        multi_thread(Speak,'Please save your code first')
         return
     code_output.insert('1.0', "Compiling...")
     command = ['g++', file_path]
@@ -330,15 +434,14 @@ def Compile():
         # err = error[i-3:]
         # for t in range(0,3):
         #     if err[:t].isdigit()==False:
-        #         err.replace(err[:t],'')
+        #         err.replace(err[:t],'')        
+        Speak('Compiled successfully')
         multi_thread(Speak, error)
 
 def Run():
     RemovePrev()
     if file_path == '':
-        save_prompt = Toplevel()
-        text = Label(save_prompt, text='Please save your code')
-        text.pack()
+        multi_thread(Speak,'Please save your code first')
         return
     code_output.insert('1.0', "Running...")
     command = ['g++', file_path]
@@ -357,15 +460,18 @@ def Run():
     code_output.delete('1.0', END)
     code_output.insert('1.0', output)
     code_output.insert('1.0',  error)   
-    if error is not None and is_on == True:
+    if error is not None and is_on == True:        
+        Speak('Compiled and Ran successfully')
         multi_thread(Speak, error)
-    if output is not None and is_on == True:
+        
+    if output is not None and is_on == True:        
+        Speak('Compiled and Ran successfully')
         output = output.decode('utf-8')
         multi_thread(Speak, output)
 
-def SaveVoice(file_path, editor, lb):
+def SaveVoice():
     if file_path == '':
-        p = 'files/'
+        p = os.getcwd()+'/'
         Speak('What name would you like me to give to the file ?')
         command = Listen()
         command = command.lower()
@@ -381,7 +487,7 @@ def SaveVoice(file_path, editor, lb):
         if 'yes' in cmd:
             path = os.path.join(p, command)
         else:
-            SaveVoice(file_path, editor, lb)
+            SaveVoice()
     else:
         path = file_path
     with open(path, 'w') as file:
@@ -391,7 +497,7 @@ def SaveVoice(file_path, editor, lb):
     if file_path != '':
         lb.config(text = file_path)
 
-def OpenVoice(editor, lb):
+def OpenVoice():
     p = 'files/'
     Speak('Which one of the following would you like me to open ?')
     files = os.listdir(p)
@@ -428,7 +534,7 @@ def button_mode():
     else:
         switch.config(image = on)         
         is_on = True     
-        multi_thread(Speak, 'Voice Mode on')
+        multi_thread(Speak, 'Activated Voice Mode')
         multi_thread(VoiceMode)
 
 app = Tk()
