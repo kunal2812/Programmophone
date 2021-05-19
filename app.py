@@ -70,10 +70,6 @@ def Deactivate():
     switch.config(image=off)
     multi_thread(MistyMode)
 
-def Close():    
-    Speak('Exiting....')
-    sys.exit()
-
 def TellPos(): 
     pos = "at line "
     pos = pos + editor.index(INSERT)
@@ -232,17 +228,20 @@ def Input(command):
     UpdateActivity(edit)
 
 def For(command):
+    time.sleep(0.5)
     Speak('Initialization')
     p1 = Listen()
     p1 = p1.replace(' ', '')
     if p1 is None:
         return
     Speak('Condition')
+    time.sleep(0.5)
     p2 = Listen()
     p2 = p2.replace(' ', '')
     if p2 is None:
         return
     Speak('Updation')
+    time.sleep(0.5)
     p3 = Listen()
     p3 = p3.replace(' ', '')
     if p3 is None:
@@ -383,10 +382,25 @@ def Escape(command):
     ind = 'insert+' + str(count_char) + 'c'
     editor.mark_set('insert',ind)
 
+def ReadLine(command):
+    lst = command.split(' ')
+    code = editor.get('1.0', END)
+    if len(lst) <= 2:
+        multi_thread(Speak, code)
+    else:
+        ind = int(lst[2])
+        lines = code.split('\n')
+        line = lines[ind-1]
+        if 'character' in command:
+            for char in line:
+                Speak(char)
+        else:
+            Speak(line)
+
 def Action(command):
     print(command)
-    control = {'deactivate':Deactivate, 'activate':Activate, 'open':OpenVoice, 'save':SaveVoice, 'compile':Compile, 'close':Close, 'exit':Close, 'run':Run}
-    cursor = {'position':TellPos, 'remove':DeletePos, 'move':MovePos, 'escape':Escape, 'enter':Enter}
+    control = {'deactivate':Deactivate, 'activate':Activate, 'open':OpenVoice, 'save':SaveVoice, 'compile':Compile, 'close':sys.exit, 'exit':sys.exit, 'run':Run}
+    cursor = {'position':TellPos, 'remove':DeletePos, 'move':MovePos, 'read':ReadLine, 'escape':Escape, 'enter':Enter}
     keywords = {'include':IncludeHeader, 'namespace':Namespace, 'main':Main, 'declare':DeclareVar,'give':GiveInput, 'print':Print, 'newline':Newline, 'input':Input,
                  'for':For, 'else if':ElseIf, 'else statement':Else, 'if statement':If, 'do while':DoWhile, 'while':While, 'brackets':Brackets, 'add':Extra
                 }
@@ -408,14 +422,6 @@ def Action(command):
             TellPos()
             return
 
-    # if '.' in command:
-    #     arguments = Listen()
-    #     if arguments is not None:
-    #         command = command + '('
-    #         command = command + arguments + ');\n'
-    #         editor.insert('INSERT', command)
-    # else:
-    #     return
     
 def multi_thread(target, *args):
     t = Thread(target = target, args=args)
@@ -460,32 +466,38 @@ def SaveAs():
 
 def Compile():
     RemovePrev()
+    activity_log.delete('1.0', END)
+    code_input.delete('1.0', END)
+    code_output.delete('1.0', END)
     if file_path == '':
         multi_thread(Speak,'Please save your code first')
         return
     code_output.insert('1.0', "Compiling...")
-    command = ['g++', file_path]
+    command = ['g++', '-std=gnu++11', file_path]
     inp = code_input.get('1.0', END)
     process = subprocess.Popen(command, stdout=subprocess.PIPE,  stderr=subprocess.PIPE, text=True)
     a, error = process.communicate()
     code_output.delete('1.0', END)
-    code_output.insert('1.0',  error)
+    code_output.insert('1.0',  error)        
+    Speak('Compiled successfully')
     if error is not None and is_on == True:
-        # i = error.index(':')
-        # err = error[i-3:]
-        # for t in range(0,3):
-        #     if err[:t].isdigit()==False:
-        #         err.replace(err[:t],'')        
-        Speak('Compiled successfully')
-        multi_thread(Speak, error)
+        gist = error.split('\n')
+        if len(gist)<=4:            
+            multi_thread(Speak, error)
+        else:
+            gist = gist[0]+'\n' + gist[1] + '\n' + gist[2] + '\n' + gist[3]
+            multi_thread(Speak, gist)
 
 def Run():
     RemovePrev()
+    activity_log.delete('1.0', END)
+    code_input.delete('1.0', END)
+    code_output.delete('1.0', END)
     if file_path == '':
         multi_thread(Speak,'Please save your code first')
         return
     code_output.insert('1.0', "Running...")
-    command = ['g++', file_path]
+    command = ['g++', '-std=gnu++11', file_path]
     inp = code_input.get('1.0', END)
     process = subprocess.Popen(command, stdout=subprocess.PIPE,  stderr=subprocess.PIPE, text=True)
     a, error = process.communicate()
@@ -500,13 +512,17 @@ def Run():
     # print(output)
     code_output.delete('1.0', END)
     code_output.insert('1.0', output)
-    code_output.insert('1.0',  error)   
-    if error is not None and is_on == True:        
-        Speak('Compiled and Ran successfully')
-        multi_thread(Speak, error)
+    code_output.insert('1.0',  error)       
+    Speak('Executed successfully')  
+    if error is not None and is_on == True:
+        gist = error.split('\n')
+        if len(gist)<=4:            
+            multi_thread(Speak, error)
+        else:
+            gist = gist[0]+'\n' + gist[1] + '\n' + gist[2] + '\n' + gist[3]
+            multi_thread(Speak, gist)
         
-    if output is not None and is_on == True:        
-        Speak('Compiled and Ran successfully')
+    if output is not None and is_on == True:
         output = output.decode('utf-8')
         multi_thread(Speak, output)
 
@@ -514,17 +530,21 @@ def SaveVoice():
     if file_path == '':
         p = os.getcwd()+'/'
         Speak('What name would you like me to give to the file ?')
+        time.sleep(0.5)
+        beepy.beep(4)
         command = Listen()
-        command = command.lower()
-        command = command.replace('dot', '.')
+        lst = command.split('.')
+        if 'p' in lst[1]:
+            command = lst[0]+'.cpp'
+        else:
+            command = lst[0]+'.txt'
+
         command = command.replace(' ', '')
-        
         Speak('I am saving it as ')
         for char in command:
             Speak(char)
         Speak('Say yes to confirm and no to try again')
         cmd = Listen()
-        cmd = cmd.lower()
         if 'yes' in cmd:
             path = os.path.join(p, command)
         else:
@@ -544,15 +564,11 @@ def OpenVoice():
     files = os.listdir(p)
     for file in files:
         Speak(file)
-        time.sleep(1)
-    command = Listen()
-    if command is not None:
-        command = command.lower()
-        command = command.replace('dot', '.')
-        command = command.replace(' ', '')
-        path = os.path.join(p, command)
-    else:
-        return
+        command = Listen()
+        if command is not None and 'this' in command:
+            path = os.path.join(p, file)
+            break
+
     if os.path.isfile(path):
         with open(path, 'r') as file:
             code = file.read()

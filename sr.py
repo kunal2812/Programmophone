@@ -29,12 +29,12 @@ def Correction(command):
     ans = ''
     for word in words:
         if word in vocab:
-            ans = ans + word + " "
+            ans = ans  + word + ' '
             continue
         elif len(word) > 2:
-            ans = ans + spell.correction(word) + ' '
+            ans = ans  + spell.correction(word) + ' '
         else:
-            ans = ans + word
+            ans = ans + word + ' '
     ans = Getchar(ans)
     return ans
 
@@ -45,6 +45,23 @@ def Getchar(ans):
     return ans
 
 def Speak(text):
+
+    text = text.replace(';', ' semi colon ')
+    text = text.replace('->', ' arrow operator ')    
+    text = text.replace('-', ' dash ')
+    text = text.replace('{', ' curly bracket open ')    
+    text = text.replace('#', ' hash ')
+    text = text.replace('}', ' curly bracket close ')
+    text = text.replace('(', ' round bracket open ')
+    text = text.replace(')', ' round bracket close ')
+    text = text.replace('[', ' square bracket open ')
+    text = text.replace(']', ' square bracket close ')
+    text = text.replace('"', ' double quotes ')
+    text = text.replace('\'', ' single quotes ')
+    text = text.replace(',', ' comma ')
+    text = text.replace('\\', ' backslash ')    
+    text = text.replace('|', ' pipe ')
+
     engine = pyttsx3.init()
     engine.setProperty('rate', 130)
     engine.say(text)
@@ -55,13 +72,14 @@ def Listen():
     try:
         with sr.Microphone(0) as source:
             print('Speak Now')
-            # recognizer.adjust_for_ambient_noise(source, duration=0.5)
-            # voice = recognizer.listen(source,timeout=2)
-            # text = recognizer.recognize_google(voice)
-            text = input('Enter\n')
+            recognizer.adjust_for_ambient_noise(source, duration=0.5)
+            voice = recognizer.listen(source,timeout=3)
+            text = recognizer.recognize_google(voice)
+            # text = input('Enter\n')
             # print(text)
             text = text.lower()
             text = Correction(text)
+            # print(text)
             return text
     except:
         pass
