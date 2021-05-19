@@ -50,6 +50,7 @@ def VoiceMode():
 
 def UpdateActivity(edit):
     global count    
+    beepy.beep(sound=3)
     activity_log.config(state='normal')
     activity_log.insert(END, edit)
     activity_log.config(state='disabled')
@@ -73,7 +74,7 @@ def Close():
     Speak('Exiting....')
     sys.exit()
 
-def TellPos():
+def TellPos(): 
     pos = "at line "
     pos = pos + editor.index(INSERT)
     pos = pos.replace('.', ' and column ')
@@ -166,6 +167,7 @@ def MovePos(command):
 def IncludeHeader(command):
     command = command.replace('include', '')
     command = command.replace(' ', '')
+    command = command.replace('com', 'h')
     header = "#include<"+command+'>\n'
     pos = editor.index(INSERT)
     editor.insert(INSERT, header)
@@ -256,6 +258,8 @@ def For(command):
     UpdateActivity(edit)
 
 def ElseIf(command):
+    time.sleep(1)      
+    beepy.beep(sound=4)
     condition = Listen()
     condition = condition.replace(' ', '')
     if condition is not None:
@@ -277,6 +281,8 @@ def Else(command):
     UpdateActivity(edit)
 
 def If(command):
+    time.sleep(1)      
+    beepy.beep(sound=4)
     condition = Listen()
     condition = condition.replace(' ', '')
     if condition is not None:
@@ -292,6 +298,8 @@ def If(command):
         return
 
 def DoWhile(command):
+    time.sleep(1)      
+    beepy.beep(sound=4)
     condition = Listen()
     condition = condition.replace(' ', '')
     if condition is not None:
@@ -315,6 +323,8 @@ def Main(command):
     UpdateActivity(edit)
 
 def While(command):
+    time.sleep(1)      
+    beepy.beep(sound=4)
     condition = Listen()
     condition = condition.replace(' ', '')
     if condition is not None:
@@ -336,45 +346,76 @@ def Brackets(command):
         code = '{}'
     editor.insert(INSERT, code)
     editor.mark_set('insert','insert-1c')
+
 def Extra(command):
+    command = command.replace('add', '')
     pos = editor.index(INSERT)
     editor.insert(INSERT, command)
     edit = str(count)+ '::' + pos + '-> ' + 'Adding ' +  command + '\n'
     UpdateActivity(edit)
 
+def GiveInput():
+    time.sleep(1)      
+    beepy.beep(sound=4)
+    Input = Listen()
+    if Input is not None:
+        code_input.insert(INSERT, Input)       
+        edit = str(count)+ '::' + 'Added ' +  Input + ' to input block\n'
+        UpdateActivity(edit)
+
+def Enter(command):
+    editor.insert(INSERT, '\n')
+    beepy.beep(sound=3)
+
+def Escape(command):
+    code = editor.get(INSERT, END)
+    count = 0
+    count_char = 0
+    for char in code:
+        if char=='{':
+            count+=1
+        elif char=='}' and count==0:
+            break
+        elif char=='}':
+            count-=1
+        count_char+=1
+    count_char+=1
+    ind = 'insert+' + str(count_char) + 'c'
+    editor.mark_set('insert',ind)
+
 def Action(command):
     print(command)
     control = {'deactivate':Deactivate, 'activate':Activate, 'open':OpenVoice, 'save':SaveVoice, 'compile':Compile, 'close':Close, 'exit':Close, 'run':Run}
-    cursor = {'position':TellPos, 'remove':DeletePos, 'move':MovePos}
-    keywords = {'include':IncludeHeader, 'namespace':Namespace, 'main':Main, 'declare':DeclareVar, 'print':Print, 'newline':Newline, 'input':Input,
-                 'for':For, 'else if':ElseIf, 'else statement':Else, 'if statement':If, 'do while':DoWhile, 'while':While, 'brackets':Brackets, '':Extra
+    cursor = {'position':TellPos, 'remove':DeletePos, 'move':MovePos, 'escape':Escape, 'enter':Enter}
+    keywords = {'include':IncludeHeader, 'namespace':Namespace, 'main':Main, 'declare':DeclareVar,'give':GiveInput, 'print':Print, 'newline':Newline, 'input':Input,
+                 'for':For, 'else if':ElseIf, 'else statement':Else, 'if statement':If, 'do while':DoWhile, 'while':While, 'brackets':Brackets, 'add':Extra
                 }
     for item in control.keys():
         if item in command:
-            print('control')
+            # print('control')
             control[item]()
             return
     for item in cursor.keys():
         if item in command:
-            print('cursor')
+            # print('cursor')
             cursor[item](command)
             TellPos()
             return
     for item in keywords.keys():
         if item in command:
-            print(item)
+            # print(item)
             keywords[item](command)
             TellPos()
             return
 
-    if '.' in command:
-        arguments = Listen()
-        if arguments is not None:
-            command = command + '('
-            command = command + arguments + ');\n'
-            editor.insert('INSERT', command)
-    else:
-        return
+    # if '.' in command:
+    #     arguments = Listen()
+    #     if arguments is not None:
+    #         command = command + '('
+    #         command = command + arguments + ');\n'
+    #         editor.insert('INSERT', command)
+    # else:
+    #     return
     
 def multi_thread(target, *args):
     t = Thread(target = target, args=args)
@@ -528,7 +569,8 @@ def button_mode():
 
     if is_on:
         switch.config(image=off)        
-        is_on = False    
+        is_on = False
+        activity_log.delete('1.0', END)    
         multi_thread(Speak, 'Deactivated voice mode')
         multi_thread(MistyMode)
     else:
@@ -601,7 +643,7 @@ b.pack(side=RIGHT, fill = Y)
 
 editor = F1_left.text
 font = tkinter.font.Font(font=editor['font'])
-editor.config(tabs=font.measure('           '))
+editor.config(tabs=font.measure('         '))
 editor.see(INSERT)
 
 code_input = Text(master = F2_left, font = Font, width=50, yscrollcommand = b.set, borderwidth=2)

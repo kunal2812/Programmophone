@@ -20,7 +20,7 @@ dict =  {"hash":'#', ' slash ':'/', 'hyphen':'-', 'underscore':'_', 'backslash':
             'see in':'input', 'cin':'input', 'new line':'newline', 'ent':'int', 'man':'main', 'men':'main', ' space ':' ', 
             'entertain':'main', 'ant man':'main', 'write':'right', 'zero':'0', ' one ':'1', ' two ':'2', 'three':'3', 'four':'4',
             'five':'5', 'six':'6', 'seven':'7', 'eight':'8', 'nine':'9', 'STD':'std', 'new line': 'newline', 'colon':':', 'ethan':'main',
-            'tab':'           ', 'bracket':'brackets'
+            'tab':'         ', 'bracket':'brackets', 'inter':'enter'
         }
 
 def Correction(command):
@@ -55,15 +55,13 @@ def Listen():
     try:
         with sr.Microphone(0) as source:
             print('Speak Now')
-            beepy.beep(sound=4)
-            recognizer.adjust_for_ambient_noise(source, duration=0.5)
-            voice = recognizer.listen(source,timeout=2)
-            text = recognizer.recognize_google(voice)
-            # text = input('Enter\n')
+            # recognizer.adjust_for_ambient_noise(source, duration=0.5)
+            # voice = recognizer.listen(source,timeout=2)
+            # text = recognizer.recognize_google(voice)
+            text = input('Enter\n')
             # print(text)
             text = text.lower()
             text = Correction(text)
-            # print(text)
             return text
     except:
         pass
