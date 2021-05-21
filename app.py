@@ -1,3 +1,5 @@
+'''This file contains all the primary functions in the Programmophone, UI build for it and also acts as a link between all the files'''
+
 from tkinter import *
 import tkinter.ttk as ttk
 import tkinter.font
@@ -9,24 +11,34 @@ import time
 from PIL import ImageTk, Image
 import speech_recognition as sr
 from threading import *
-from LineNum import *
+from editor import *
 from sr import *
+from cpp_utils import *
+from utils import *
+from common_utils import *
 
-Font = ("Comic Sans MS", "10", "normal")
+Font = ("Comic Sans MS", "10", "normal") #Default font
 Bfont = ("Comic Sans MS", "10", "bold")
 file_path = ''
-recognizer = sr.Recognizer()
-is_on = False
-count = 1
+is_on = False #Carries the state of voice mode
+count = 1 #Activity count while the voice mode is on
 
 def Path(path):
+    '''
+    Called upon for changing the current file_path every time a file is opened or saved
+    '''                                              
     global file_path
     file_path = path
 
 def MistyMode():
+    '''
+    Default configuration with which Programmophone runs, the commands would still be listened without the voice mode being on
+    but inorder for it to perform the desired action one must say 'hey misty' followed by the commands in the documentation.
+    This functionality is provided so that one could also work with it even in noise and normal voice mode could be activated with
+    the help of voice
+    '''                                                  
     global is_on
     while is_on==False:
-        # print(is_on)
         command = Listen()
         if command is not None:
             if 'hey' and 'misty' in command:
@@ -38,9 +50,11 @@ def MistyMode():
     return
 
 def VoiceMode():
+    '''
+    Listens and sends the obtained text to 'Action' to find the trigger word and act accordingly
+    '''
     global is_on
     while is_on==True:
-        # print(is_on)
         command = Listen()
         if command is not None:
             Action(command)
@@ -48,15 +62,10 @@ def VoiceMode():
             sys.exit()
     return
 
-def UpdateActivity(edit):
-    global count    
-    beepy.beep(sound=3)
-    activity_log.config(state='normal')
-    activity_log.insert(END, edit)
-    activity_log.config(state='disabled')
-    count+=1
-
 def Activate():
+    '''
+    For activating the voice mode
+    '''
     global is_on
     Speak('Voice Mode on')
     is_on = True
@@ -64,376 +73,80 @@ def Activate():
     multi_thread(VoiceMode)
 
 def Deactivate():
+    '''
+    For deactivating the voice mode
+    '''
     global is_on
+    global count
+    count=1
     is_on = False      
     Speak('Deactivated voice mode')
     switch.config(image=off)
     multi_thread(MistyMode)
 
-def TellPos(): 
-    pos = "at line "
-    pos = pos + editor.index(INSERT)
-    pos = pos.replace('.', ' and column ')
-    multi_thread(Speak,pos)
-
-def DeletePosLeft(index):
-    index = 'insert-'+index
-    deleted = editor.get(index, INSERT)
-    pos = editor.index(INSERT)
-    editor.delete(index, INSERT)
-    edit = str(count)+ '::' + pos + '->' + 'Deleted ' + index[0] + ' characters towards left ' + deleted + '\n'
-    UpdateActivity(edit)
-
-def DeletePosRight(index):
-    index = 'insert+'+index
-    pos = editor.index(INSERT)
-    deleted = editor.get(INSERT, index)
-    editor.delete(INSERT, index)
-    edit = str(count)+ '::' + pos + '->' + 'Deleted ' + index[0]+ ' characters towards right ' + deleted + '\n'
-    UpdateActivity(edit)
-
-def DeletePosAll(index):
-    pos = editor.index(INSERT)
-    editor.delete('1.0',END)
-    edit = str(count)+ '::' + pos + '->' + 'Cleared editor\n'
-    UpdateActivity(edit)
-
-def DeletePos(command):
-    words = command.split(' ')
-    t = len(words)
-    if t==3:
-        pos = 1
-    else:
-        pos = words[t-2]
-    index = str(pos) + 'c'
-    dict = {'left':DeletePosLeft, 'right':DeletePosRight, 'all':DeletePosAll}
-    for item in dict.keys():
-        if item in command:
-            dict[item](index)
-
-def MovePosUp(command,pos):
-    index = 'insert-' + str(pos) + 'l'
-    editor.mark_set(INSERT, index)
-
-def MovePosTo(command,pos):
-    print('Here')
-    words = command.split(' ')
-    # print(words)
-    pos = []
-    for word in words:
-        if word.isdigit()==True:
-            pos+=word
-    # print(pos)
-    if 'line' not in command:
-        ind = editor.index(INSERT)
-        index = ind.split('.')
-        index = index[0] + pos[0]
-    elif 'column' not in command:
-        index = pos[0]+'.'+'0'
-    else:
-        index = pos[0]+'.'+pos[1]
-        # print(index)
-    editor.mark_set(INSERT, index)
-
-def MovePosLeft(command, pos):
-    index = 'insert-' + str(pos) + 'c'
-    editor.mark_set(INSERT, index)
-
-def MovePosRight(command, pos):
-    index = 'insert+' + str(pos) + 'c'
-    editor.mark_set(INSERT, index)
-
-def MovePosDown(command, pos):
-    index = 'insert+' + str(pos) + 'l'
-    editor.mark_set(INSERT, index)
-
-def MovePos(command):
-    words = command.split(' ')
-    t = len(words)
-    if t==3:
-        pos = 1
-    else:
-        pos = words[t-2]
-    dict = {'up':MovePosUp, 'line':MovePosTo, 'column':MovePosTo, 'left':MovePosLeft,'right':MovePosRight,'down':MovePosDown}
-    for item in dict.keys():
-        if item in command:
-            dict[item](command,pos)
-            break
-
-def IncludeHeader(command):
-    command = command.replace('include', '')
-    command = command.replace(' ', '')
-    command = command.replace('com', 'h')
-    header = "#include<"+command+'>\n'
-    pos = editor.index(INSERT)
-    editor.insert(INSERT, header)
-    edit = str(count)+ '::' + pos + '-> '  + 'Included ' + command + ' header file\n'
-    UpdateActivity(edit)
-
-def Namespace(command):
-    words = command.split(' ')
-    # print(words)
-    namespace = 'using namespace ' + words[len(words)-2] + ';\n'
-    pos = editor.index(INSERT)
-    editor.insert(INSERT, namespace)
-    edit = str(count)+ '::' + pos + '-> ' + 'You are now using namespace ' + words[len(words)-2] + ' \n'
-    UpdateActivity(edit)
-
-def DeclareVar(command):
-    words = command.split(' ')
-    code = command.replace(words[0], '')
-    edit = code
-    code = code+';\n'
-    pos = editor.index(INSERT)
-    editor.insert(INSERT, code)
-    edit = str(count)+ '::' + pos + '-> ' + 'Declared variable of data type ' + code + ' \n'
-    UpdateActivity(edit)
-
-def Print(command):
-    command = command.replace('print ','')
-    arg = command.split(' ')    
-    code = 'std::cout '
-    edit = ''
-    pos = editor.index(INSERT)
-    for item in arg:
-        if item is not '':
-            edit = edit + item + ' '
-            code = code + ' << ' + item
-    code += ';\n'
-    editor.insert(INSERT, code)
-    edit = str(count)+ '::' + pos + '-> ' + 'Printing ' + edit + ' \n'
-    UpdateActivity(edit)
-
-def Newline(command):
-    code = 'std::cout << endl;\n'
-    pos = editor.index(INSERT)
-    editor.insert(INSERT, code)
-    edit = str(count)+ '::' + pos + '-> ' + 'Added a newline ' + '\n'
-    UpdateActivity(edit)
-
-def Input(command):
-    command = command.replace('input ','')
-    arg = command.split(' ')
-    print(arg) 
-    edit = ''
-    code = 'std::cin '
-    for item in arg:
-        if item is not '':
-            edit = edit + item + ' '
-            code = code + ' >> ' +item
-    code += ';\n'
-    pos = editor.index(INSERT)
-    editor.insert(INSERT, code)
-    edit = str(count)+ '::' + pos + '-> ' + 'Inputting ' + edit +  '\n'
-    UpdateActivity(edit)
-
-def For(command):
-    time.sleep(0.5)
-    Speak('Initialization')
-    p1 = Listen()
-    p1 = p1.replace(' ', '')
-    if p1 is None:
-        return
-    Speak('Condition')
-    time.sleep(0.5)
-    p2 = Listen()
-    p2 = p2.replace(' ', '')
-    if p2 is None:
-        return
-    Speak('Updation')
-    time.sleep(0.5)
-    p3 = Listen()
-    p3 = p3.replace(' ', '')
-    if p3 is None:
-        return
-    p1 = p1.replace('none','')
-    p2 = p2.replace('none','')
-    p3 = p3.replace('none','')
-    code = 'for(' + p1 + '; ' + p2 + '; ' + p3 + '){\n\n}'
-    pos = editor.index(INSERT)
-    editor.insert(INSERT, code)            
-    editor.mark_set('insert', 'insert-1l')
-    edit = str(count)+ '::' + pos + '-> ' + 'Added a for loop while ' + p2 +  '\n'
-    UpdateActivity(edit)
-
-def ElseIf(command):
-    time.sleep(1)      
-    beepy.beep(sound=4)
-    condition = Listen()
-    condition = condition.replace(' ', '')
-    if condition is not None:
-        code = 'else if('
-        code = code + condition
-        code = code + '){\n\n}'
-        pos = editor.index(INSERT)
-        editor.insert(INSERT, code)            
-        editor.mark_set('insert', 'insert-1l')
-        edit = str(count)+ '::' + pos + '-> ' + 'Added a else if block, where condition is ' + condition +  '\n'
-        UpdateActivity(edit)
-
-def Else(command):
-    code = 'else{\n\n}'
-    pos = editor.index(INSERT)
-    editor.insert(INSERT, code)
-    editor.mark_set('insert', 'insert-1l')
-    edit = str(count)+ '::' + pos + '-> ' + 'Added a else block' +  '\n'
-    UpdateActivity(edit)
-
-def If(command):
-    time.sleep(1)      
-    beepy.beep(sound=4)
-    condition = Listen()
-    condition = condition.replace(' ', '')
-    if condition is not None:
-        code = 'if('
-        code = code + condition
-        code = code + '){\n\n}'
-        pos = editor.index(INSERT)
-        editor.insert(INSERT, code)            
-        editor.mark_set('insert', 'insert-1l')
-        edit = str(count)+ '::' + pos + '-> ' + 'Added a else if block, where condition is ' + condition +  '\n'
-        UpdateActivity(edit)
-    else:
-        return
-
-def DoWhile(command):
-    time.sleep(1)      
-    beepy.beep(sound=4)
-    condition = Listen()
-    condition = condition.replace(' ', '')
-    if condition is not None:
-        code = 'do{\n\n}\nwhile('
-        code = code + condition
-        code = code + ')'
-        pos = editor.index(INSERT)
-        editor.insert(INSERT, code)
-        edit = str(count)+ '::' + pos + '-> ' + 'Added a do while loop with condition ' + condition +  '\n'           
-        editor.mark_set('insert', 'insert-2l')
-        UpdateActivity(edit)
-    else:
-        return  
-
-def Main(command):
-    command = command + '(){\n\n}'
-    pos = editor.index(INSERT)
-    editor.insert(INSERT, command)
-    edit = str(count)+ '::' + pos + '-> ' + 'Added main function ' +  '\n'
-    editor.mark_set('insert', 'insert-1l')
-    UpdateActivity(edit)
-
-def While(command):
-    time.sleep(1)      
-    beepy.beep(sound=4)
-    condition = Listen()
-    condition = condition.replace(' ', '')
-    if condition is not None:
-        code = 'while('
-        code = code + condition
-        code = code + '){\n\n}'
-        pos = editor.index(INSERT)
-        editor.insert(INSERT, code)       
-        edit = str(count)+ '::' + pos + '-> ' + 'Added a while loop here with condiiton ' +  condition + '\n'     
-        editor.mark_set('insert', 'insert-1l')
-        UpdateActivity(edit)
-
-def Brackets(command):
-    if 'square' in command:
-        code = '[]'
-    elif 'round' in command:
-        code = '()'
-    elif 'curly' in command:
-        code = '{}'
-    editor.insert(INSERT, code)
-    editor.mark_set('insert','insert-1c')
-
-def Extra(command):
-    command = command.replace('add', '')
-    pos = editor.index(INSERT)
-    editor.insert(INSERT, command)
-    edit = str(count)+ '::' + pos + '-> ' + 'Adding ' +  command + '\n'
-    UpdateActivity(edit)
-
-def GiveInput():
-    time.sleep(1)      
-    beepy.beep(sound=4)
-    Input = Listen()
-    if Input is not None:
-        code_input.insert(INSERT, Input)       
-        edit = str(count)+ '::' + 'Added ' +  Input + ' to input block\n'
-        UpdateActivity(edit)
-
-def Enter(command):
-    editor.insert(INSERT, '\n')
-    beepy.beep(sound=3)
-
-def Escape(command):
-    code = editor.get(INSERT, END)
-    count = 0
-    count_char = 0
-    for char in code:
-        if char=='{':
-            count+=1
-        elif char=='}' and count==0:
-            break
-        elif char=='}':
-            count-=1
-        count_char+=1
-    count_char+=1
-    ind = 'insert+' + str(count_char) + 'c'
-    editor.mark_set('insert',ind)
-
-def ReadLine(command):
-    lst = command.split(' ')
-    code = editor.get('1.0', END)
-    if len(lst) <= 2:
-        multi_thread(Speak, code)
-    else:
-        ind = int(lst[2])
-        lines = code.split('\n')
-        line = lines[ind-1]
-        if 'character' in command:
-            for char in line:
-                Speak(char)
-        else:
-            Speak(line)
-
 def Action(command):
-    print(command)
-    control = {'deactivate':Deactivate, 'activate':Activate, 'open':OpenVoice, 'save':SaveVoice, 'compile':Compile, 'close':sys.exit, 'exit':sys.exit, 'run':Run}
-    cursor = {'position':TellPos, 'remove':DeletePos, 'move':MovePos, 'read':ReadLine, 'escape':Escape, 'enter':Enter}
-    keywords = {'include':IncludeHeader, 'namespace':Namespace, 'main':Main, 'declare':DeclareVar,'give':GiveInput, 'print':Print, 'newline':Newline, 'input':Input,
-                 'for':For, 'else if':ElseIf, 'else statement':Else, 'if statement':If, 'do while':DoWhile, 'while':While, 'brackets':Brackets, 'add':Extra
+    '''
+    For finding the trigger word from the text obtained from speech and calling the neccessary function based on the trigger word
+    '''
+    # print(command)
+    global editor
+    global count
+    global activity_log
+    global code_input
+
+    control = {'deactivate':Deactivate, 'activate':Activate, 'open':OpenVoice,          
+                 'save':SaveVoice, 'compile':Compile, 'close':sys.exit, 'exit':sys.exit,
+                 'run':Run
                 }
+
+    #Common functions for moving the cursor and deleting characters
+    common = {'position':TellPos, 'give':GiveInput, 'remove':DeletePos, 'move':MovePos,   
+                'read':ReadLine, 'escape':Escape, 'enter':Enter, 'add':Extra, 'brackets':Brackets
+                }
+    #Common triggers for C and C++ which are checked only if the file type is .c or .cpp, so make sure to save the file before triggering language specific functions
+    c_cpp_common_triggers = {'include':IncludeHeader, 'main':Main, 'declare':DeclareVar,  
+                             'for':For, 'else if':ElseIf, 'else statement':Else,          
+                             'if statement':If, 'do while':DoWhile, 'while':While
+                            }
+    #C++ specific triggers which are checked only if the file type is .cpp
+    cpp_triggers = {'namespace':Namespace, 'print':Print, 'newline':Newline, 'input':Input}                                                                                             
+
     for item in control.keys():
         if item in command:
-            # print('control')
             control[item]()
             return
-    for item in cursor.keys():
+    for item in common.keys():
         if item in command:
-            # print('cursor')
-            cursor[item](command)
-            TellPos()
+            common[item](command, editor, count, activity_log, code_input)
+            if item == 'remove':
+                count+=1
+            #Every time there is change on the editor the user is told the current position of cursor
+            TellPos(command, editor, count, activity_log, code_input)
             return
-    for item in keywords.keys():
-        if item in command:
-            # print(item)
-            keywords[item](command)
-            TellPos()
-            return
+    if '.c' in file_path: #i.e both c and c++ files are targeted
+        for item in c_cpp_common_triggers.keys():
+            if item in command:
+                c_cpp_common_triggers[item](command, editor, count, activity_log)
+                count+=1
+                TellPos(command, editor, count, activity_log, code_input)
+                return
 
-    
-def multi_thread(target, *args):
-    t = Thread(target = target, args=args)
-    # print(active_count())
-    t.daemon=True
-    t.start()
-
-def Start():
-    MistyMode()
+    if '.cpp' in file_path: #only c++ files are targeted
+        for item in cpp_triggers.keys():
+            if item in command:
+                cpp_triggers[item](command, editor, count, activity_log)
+                count+=1
+                TellPos(command, editor, count, activity_log, code_input)
+                return
 
 def Open():
-    path = askopenfilename(filetypes = [('C++ Files', '*.cpp')])
+    '''
+    Opens a overlaying dialog to choose which file to open
+    Triggered when Open button in the header is clicked
+    '''
+    global file_path
+    global lb
+    path = askopenfilename(filetypes = [('C++ Files', '*.cpp'), ('Java Files', '*.java'), ('Python Files', '*.py'), ('C Files', '*.c'), ('Text Files', '*.txt'), ('All Files', '*.*')])
     try:
         with open(path, 'r') as file:
             code = file.read()
@@ -443,101 +156,61 @@ def Open():
     except:
         pass
     if file_path != '':
-        lb.config(text = file_path)
-
+        UpdateLogo(file_path, lb, logo_j, logo_cp, logo_p, logo_t, logo_c, logo)
+            
 def Save():
+    '''
+    For saving the changes into new file
+    Triggered when Save button in the header is clicked
+    '''    
+    global file_path
+    global lb
     if file_path == '':
-        path = asksaveasfilename(filetypes=[('C++ Files', '*.cpp')])
+        path = asksaveasfilename(filetypes = [('C++ Files', '*.cpp'), ('Java Files', '*.java'), ('Python Files', '*.py'), ('C Files', '*.c'), ('Text Files', '*.txt'), ('All Files', '*.*')])
     else:
         path = file_path
     with open(path, 'w') as file:
         code = editor.get('1.0', END)
         file.write(code)
         Path(path)
-    lb.config(text = file_path)
+    UpdateLogo(file_path, lb, logo_j, logo_cp, logo_p, logo_t, logo_c, logo)
 
-def SaveAs():
-    path = asksaveasfilename(filetypes=[('C++ Files', '*.cpp')])
+def SaveAs():    
+    global file_path
+    global lb
+    path = asksaveasfilename(filetypes = [('C++ Files', '*.cpp'), ('Java Files', '*.java'), ('Python Files', '*.py'), ('C Files', '*.c'), ('Text Files', '*.txt'), ('All Files', '*.*')])
     with open(path, 'w') as file:
         code = editor.get('1.0', END)
         file.write(code)
         Path(path)
-    lb.config(text = file_path)
-
-def Compile():
-    RemovePrev()
-    activity_log.delete('1.0', END)
-    code_input.delete('1.0', END)
-    code_output.delete('1.0', END)
-    if file_path == '':
-        multi_thread(Speak,'Please save your code first')
-        return
-    code_output.insert('1.0', "Compiling...")
-    command = ['g++', '-std=gnu++11', file_path]
-    inp = code_input.get('1.0', END)
-    process = subprocess.Popen(command, stdout=subprocess.PIPE,  stderr=subprocess.PIPE, text=True)
-    a, error = process.communicate()
-    code_output.delete('1.0', END)
-    code_output.insert('1.0',  error)        
-    Speak('Compiled successfully')
-    if error is not None and is_on == True:
-        gist = error.split('\n')
-        if len(gist)<=4:            
-            multi_thread(Speak, error)
-        else:
-            gist = gist[0]+'\n' + gist[1] + '\n' + gist[2] + '\n' + gist[3]
-            multi_thread(Speak, gist)
-
-def Run():
-    RemovePrev()
-    activity_log.delete('1.0', END)
-    code_input.delete('1.0', END)
-    code_output.delete('1.0', END)
-    if file_path == '':
-        multi_thread(Speak,'Please save your code first')
-        return
-    code_output.insert('1.0', "Running...")
-    command = ['g++', '-std=gnu++11', file_path]
-    inp = code_input.get('1.0', END)
-    process = subprocess.Popen(command, stdout=subprocess.PIPE,  stderr=subprocess.PIPE, text=True)
-    a, error = process.communicate()
-    p = subprocess.Popen(["a.exe"], stdout=subprocess.PIPE, stdin = subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
-    code = editor.get('1.0', END)
-    if "cin" or "scanf" in code:
-        inp = inp.encode('ascii')   
-        p.stdin.write(inp)
-    output, err = p.communicate()
-    # print(type(p.stdout))
-    # print(p.stdout)
-    # print(output)
-    code_output.delete('1.0', END)
-    code_output.insert('1.0', output)
-    code_output.insert('1.0',  error)       
-    Speak('Executed successfully')  
-    if error is not None and is_on == True:
-        gist = error.split('\n')
-        if len(gist)<=4:            
-            multi_thread(Speak, error)
-        else:
-            gist = gist[0]+'\n' + gist[1] + '\n' + gist[2] + '\n' + gist[3]
-            multi_thread(Speak, gist)
-        
-    if output is not None and is_on == True:
-        output = output.decode('utf-8')
-        multi_thread(Speak, output)
+    UpdateLogo(file_path, lb, logo_j, logo_cp, logo_p, logo_t, logo_c, logo)
 
 def SaveVoice():
+    '''
+    Triggered when save command is called, provides completely hands free experience while saving the file
+    '''     
+    global file_path
+    global lb
     if file_path == '':
         p = os.getcwd()+'/'
         Speak('What name would you like me to give to the file ?')
         time.sleep(0.5)
         beepy.beep(4)
         command = Listen()
-        lst = command.split('.')
-        if 'p' in lst[1]:
-            command = lst[0]+'.cpp'
-        else:
-            command = lst[0]+'.txt'
+        Speak('What is the format of this file ? Say 0 for C++, 1 for Python, 2 for Java, 3 for c and 4 for text')
+        time.sleep(0.5)
+        beepy.beep(4)
+        format = Listen()
+        if '0' in format:
+            command = command+'.cpp'
+        elif '1' in format:
+            command = command+'.cpp'
+        elif '2' in format:
+            command = command+'.java'
+        elif '3' in format:
+            command = command+'.c'
+        elif '4' in format:
+            command = command+'.txt'        
 
         command = command.replace(' ', '')
         Speak('I am saving it as ')
@@ -556,9 +229,14 @@ def SaveVoice():
         file.write(code)
         Path(path)    
     if file_path != '':
-        lb.config(text = file_path)
+        UpdateLogo(file_path, lb, logo_j, logo_cp, logo_p, logo_t, logo_c, logo)
 
 def OpenVoice():
+    '''
+    Triggered when open command is called, provides completely hands free experience while opening the file
+    '''  
+    global file_path
+    global lb
     p = 'files/'
     Speak('Which one of the following would you like me to open ?')
     files = os.listdir(p)
@@ -576,14 +254,19 @@ def OpenVoice():
             editor.insert('1.0', code)
             Path(path)
         if file_path != '':
-            lb.config(text = file_path)
+            UpdateLogo(file_path, lb, logo_j, logo_cp, logo_p, logo_t, logo_c, logo)
     else:
         Speak('Try Again')
 
 def button_mode():
+    '''
+    For activating or deactivating voice mode with the button on the top right corner of layout
+    '''  
     global is_on
+    global count
 
     if is_on:
+        count=1
         switch.config(image=off)        
         is_on = False
         activity_log.delete('1.0', END)    
@@ -600,29 +283,45 @@ app.geometry("1200x670-100-38")
 app.title('Programmophone')
 app.minsize(1200, 670)
 
-logo = ImageTk.PhotoImage(Image.open("assets/cpp.png").resize((30, 30), Image.ANTIALIAS))
+#All logos corresponding to the file type
+logo_j = ImageTk.PhotoImage(Image.open("assets/java.png").resize((40, 22), Image.ANTIALIAS))
+logo_cp = ImageTk.PhotoImage(Image.open("assets/cpp.png").resize((30, 30), Image.ANTIALIAS))
+logo_p = ImageTk.PhotoImage(Image.open("assets/python.png").resize((25, 20), Image.ANTIALIAS))
+logo_t = ImageTk.PhotoImage(Image.open("assets/text.png").resize((25, 23), Image.ANTIALIAS))
+logo_c = ImageTk.PhotoImage(Image.open("assets/c.png").resize((25, 23), Image.ANTIALIAS))
+logo = ImageTk.PhotoImage(Image.open("assets/unknown.png").resize((25, 23), Image.ANTIALIAS))
+
 on = ImageTk.PhotoImage(Image.open("assets/on.png").resize((60, 20), Image.ANTIALIAS))
 off = ImageTk.PhotoImage(Image.open("assets/off.png").resize((60, 20), Image.ANTIALIAS))
 
+#Main label on the tkinter app window
 lb = Label(app, justify = RIGHT, compound = LEFT, padx = 10, text = "newfile.cpp",  font = Bfont, image = logo)
 
 lb.pack() 
 
+global code_output
+global code_input
+global editor
+
+#Main menu on the tkinter window
 header = Menu(app)
 header.add_command(label='Open', command=Open)
 header.add_command(label='Save', command=Save)
 header.add_command(label='Save as', command=SaveAs)
-header.add_command(label='Compile', command=Compile)
-header.add_command(label='Run', command=Run)
+header.add_command(label='Compile', command=lambda: multi_thread(Compile, 'Compiled successfully', code_input, code_output, file_path, editor, is_on))
+header.add_command(label='Run', command=lambda: multi_thread(Run, 'Executed successfully', code_input, code_output, file_path, editor, is_on))
 header.add_command(label='Close', command=sys.exit)
 app.config(menu=header)
 
+#Top frame
 F1 = Frame(app, relief=SUNKEN, borderwidth=2)
 F1.pack(side=TOP, fill=BOTH)
 
+#Frame for the editor
 F1_left = CustomFrame(F1, height=27, relief = SUNKEN, borderwidth=2)
 F1_left.pack(side=LEFT, fill = BOTH, padx=(0, 10))
 
+#Frame for the activity log
 F1_right = Frame(F1, relief=SUNKEN, borderwidth=2)
 F1_right.pack(side = RIGHT, fill = BOTH, padx=(20, 0))
 
@@ -632,20 +331,28 @@ activity_lb.pack(anchor=W)
 a = Scrollbar(F1_right, orient=VERTICAL)
 a.pack(side=RIGHT, fill=Y, pady=(0,25))
 
+#This section would contain all activity performed while the voice mode is on which gets cleared if the voice mode is disabled in between, useful for tracking what operations the person has performed 
 activity_log = Text(F1_right, width = 50, height=27, yscrollcommand=a.set, borderwidth=2)
 activity_log.pack(fill = BOTH, pady=(0,20))
+
+#Making the activity log non-editable
 activity_log.bind("<Key>", lambda e: "break")
 
 a.config(command=activity_log.yview)
 
+#Switch for the voice mode
 switch = Button(lb,image=off,bd =0,command = button_mode, anchor=E)
 switch.pack(side=RIGHT, padx=(1070,0), anchor=E, expand=True)
 
+#Bottom Frame
 F2 = Frame(relief = SUNKEN, borderwidth=2)
 F2.pack(side=BOTTOM, fill=BOTH)
 
+#Frame for input section
 F2_left = Frame(F2, relief = SUNKEN, borderwidth=2)
 F2_left.pack(side=LEFT, fill=BOTH)
+
+#Frame for output section
 F2_right = Frame(F2, relief = SUNKEN, borderwidth=2)
 F2_right.pack(side=RIGHT, fill=BOTH)
 
@@ -672,9 +379,12 @@ c.pack(side=RIGHT, fill = Y)
 
 code_output = Text(master = F2_right, font = Font, width=170, yscrollcommand = c.set, borderwidth=2)
 code_output.pack(fill = BOTH, padx=2)
+
+#Making the output window non editable
 code_output.bind("<Key>", lambda e: "break")
 
 c.config(command = code_output.yview)
 
-multi_thread(Start)
+#Starting another thread for misty mode before the main thread starts which is a infinite loop
+multi_thread(MistyMode)
 app.mainloop()

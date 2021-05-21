@@ -1,14 +1,19 @@
-import subprocess
+'''This file contains utilities for Speech recognition and then further text processing'''
+
 import pyttsx3
 import speech_recognition as sr
 from spellchecker import SpellChecker
-import beepy
 
 recognizer = sr.Recognizer()
+recognizer.phrase_threshold = 0.15
+recognizer.pause_threshold = 0.5
+
 spell = SpellChecker()
+#Loading custom vocabulary for spell check based on levenshtein distance algorithm
 spell.word_frequency.load_text_file('assets/vocabulary.txt')
 vocab =  set(open('assets/vocabulary.txt').read().split(','))
 
+#Dictionary for encoding the words into corresponding symbols
 dict =  {"hash":'#', ' slash ':'/', 'hyphen':'-', 'underscore':'_', 'backslash':'\\', 
             'less than':'<', 'greater than':'>', 'asterisk':'*', 'exclamation':'!',
             'ampersand':'&', 'modulo':'%', 'plus':'+', 'minus':'-', 'divide':'/', 'dot':'.',
@@ -20,10 +25,13 @@ dict =  {"hash":'#', ' slash ':'/', 'hyphen':'-', 'underscore':'_', 'backslash':
             'see in':'input', 'cin':'input', 'new line':'newline', 'ent':'int', 'man':'main', 'men':'main', ' space ':' ', 
             'entertain':'main', 'ant man':'main', 'write':'right', 'zero':'0', ' one ':'1', ' two ':'2', 'three':'3', 'four':'4',
             'five':'5', 'six':'6', 'seven':'7', 'eight':'8', 'nine':'9', 'STD':'std', 'new line': 'newline', 'colon':':', 'ethan':'main',
-            'tab':'         ', 'bracket':'brackets', 'inter':'enter'
+            'tab':'         ', 'bracket':'brackets', 'inter':'enter', 'brake':'break'
         }
 
 def Correction(command):
+    '''
+    Checks spelling followed by symbol encoding
+    '''
     words = command.split(' ')
     # print(words)
     ans = ''
@@ -39,13 +47,18 @@ def Correction(command):
     return ans
 
 def Getchar(ans):
+    '''
+    Changes words into symbols using the dictionary
+    '''
     for key in dict.keys():
         if key in ans:
             ans = ans.replace(key, dict[key])
     return ans
 
 def Speak(text):
-
+    '''
+    Simple text to speech function which first decodes some symbols that voice engine doesn't recognize and skips them, followed by generation of speech
+    '''
     text = text.replace(';', ' semi colon ')
     text = text.replace('->', ' arrow operator ')    
     text = text.replace('-', ' dash ')
@@ -61,19 +74,24 @@ def Speak(text):
     text = text.replace(',', ' comma ')
     text = text.replace('\\', ' backslash ')    
     text = text.replace('|', ' pipe ')
-
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 130)
-    engine.say(text)
-    engine.runAndWait()
+    try:
+        engine = pyttsx3.init()
+        engine.setProperty('rate', 130)
+        engine.say(text)
+        engine.runAndWait()
+    except:
+        pass
     return
 
 def Listen():
+    '''
+    Speech to text based on API call
+    '''
     try:
         with sr.Microphone(0) as source:
             print('Speak Now')
             recognizer.adjust_for_ambient_noise(source, duration=0.5)
-            voice = recognizer.listen(source,timeout=3)
+            voice = recognizer.listen(source,timeout=1)
             text = recognizer.recognize_google(voice)
             # text = input('Enter\n')
             # print(text)
@@ -83,15 +101,3 @@ def Listen():
             return text
     except:
         pass
-
-def RemovePrev():
-    cmd = 'rm -frv a.exe'
-    p   = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
-    out = p.stdout.read()
-
-# while True:
-#     try:
-#         text = Listen()
-#         print(Getchar(text))
-#     except:
-#         pass
