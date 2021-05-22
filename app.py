@@ -123,7 +123,7 @@ def Action(command):
             #Every time there is change on the editor the user is told the current position of cursor
             TellPos(command, editor, count, activity_log, code_input)
             return
-    if '.c' in file_path: #i.e both c and c++ files are targeted
+    if ('.c'==file_path) or ('.cpp'==file_path): #i.e both c and c++ files are targeted
         for item in c_cpp_common_triggers.keys():
             if item in command:
                 c_cpp_common_triggers[item](command, editor, count, activity_log)
@@ -131,7 +131,7 @@ def Action(command):
                 TellPos(command, editor, count, activity_log, code_input)
                 return
 
-    if '.cpp' in file_path: #only c++ files are targeted
+    if '.cpp'==file_path: #only c++ files are targeted
         for item in cpp_triggers.keys():
             if item in command:
                 cpp_triggers[item](command, editor, count, activity_log)

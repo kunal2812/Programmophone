@@ -4,3 +4,7 @@ SpeechRecognition == 3.8.1
 beepy == 1.0.7
 pyspellchecker == 0.6.2
 pyttsx3 == 2.90
+# pydub == 0.25.1
+# tensorflow == 2.5.0
+# ffmpeg-python == 0.2.0
+# librosa == 0.8.0
