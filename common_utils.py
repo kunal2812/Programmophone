@@ -11,7 +11,7 @@ def TellPos(command, editor, count, activity_log, code_input):
     pos = "at line "
     pos = pos + editor.index(INSERT)
     pos = pos.replace('.', ' and column ')
-    multi_thread(Speak,pos)
+    Speak(pos)
 
 def DeletePosLeft(index, editor, count, activity_log):
     '''

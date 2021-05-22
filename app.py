@@ -30,6 +30,19 @@ def Path(path):
     global file_path
     file_path = path
 
+def multi_thread(target, *args):
+    '''
+    For starting a new thread parallel to the main thread
+    '''
+    t = Thread(target = target, args=args)
+    print(active_count())
+    #If the thread is not daemon it won't exit even if the main function is terminated and cause the system to not respond
+    t.daemon=True
+    t.start()
+
+def Start():
+    MistyMode()
+
 def MistyMode():
     '''
     Default configuration with which Programmophone runs, the commands would still be listened without the voice mode being on
@@ -38,8 +51,10 @@ def MistyMode():
     the help of voice
     '''                                                  
     global is_on
+    global activity_lb
     while is_on==False:
-        command = Listen()
+        command = Listen(activity_lb)
+        # print(8)
         if command is not None:
             if 'hey' and 'misty' in command:
                 command = command.replace('hey', '')
@@ -47,20 +62,19 @@ def MistyMode():
                 Action(command)
         if is_on:
             sys.exit()
-    return
 
 def VoiceMode():
     '''
     Listens and sends the obtained text to 'Action' to find the trigger word and act accordingly
     '''
     global is_on
+    global activity_lb
     while is_on==True:
-        command = Listen()
+        command = Listen(activity_lb)
         if command is not None:
             Action(command)
         if is_on==False:
             sys.exit()
-    return
 
 def Activate():
     '''
@@ -84,15 +98,122 @@ def Deactivate():
     switch.config(image=off)
     multi_thread(MistyMode)
 
+def Compile(text, code_input, code_output, file_path, editor, is_on):
+    '''
+    For compiling the program and creating executable or class file
+    '''
+    RemovePrev()
+    code_output.delete('1.0', END)
+    if file_path == '':
+        multi_thread(Speak,'Please save your code first')
+        return
+    filetype = file_path.split('.')
+    if 'cpp' in filetype[1]:   
+        code_output.insert('1.0', "Compiling...")
+        command = ['g++', '-std=gnu++11', file_path]
+    elif 'txt' in filetype[1]:
+        multi_thread(Speak, "Can't compile .txt files")                
+        code_output.insert('1.0', "Can't compile .txt files")
+        return
+    elif 'py' in filetype[1]:
+        multi_thread(Speak, "Python is an interpreted language and not a compiled one, Click on run to run the program")                
+        code_output.insert('1.0', 'Python is an interpreted language and not a compiled one\n Click on run to run the program')
+        return
+    elif 'java' in filetype[1]:
+        file_type = file_path.split('.')
+        rem = file_type[0] + '.class'
+        cmd = 'rm -frv ' + rem
+        p   = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
+        _ = p.stdout.read() 
+        code_output.insert('1.0', "Compiling...")
+        command = ['javac', file_path]
+    elif 'c' in filetype[1]:        
+        code_output.insert('1.0', "Compiling...")
+        command = ['gcc', file_path]
+    else:
+        return
+    process = subprocess.Popen(command, stdout=subprocess.PIPE,  stderr=subprocess.PIPE, text=True)
+    a, error = process.communicate()
+    code_output.delete('1.0', END)
+    code_output.insert('1.0',  error)
+    Speak(text)
+    #Most of the times error in the later parts are associated with the initial errors so the user is told the error in the initial part so that user don't has to listen the complete error log
+    if error is not None and is_on == True:
+        gist = error.split('\n')
+        if len(gist)<=4:           
+            multi_thread(Speak, error)
+        else:
+            gist = gist[0]+'\n' + gist[1] + '\n' + gist[2] + '\n' + gist[3]
+            multi_thread(Speak, gist)
+    return error
+
+def Run(text, code_input, code_output, file_path, editor, is_on):
+    '''
+    For both compiling and then running the executable or class file
+    ''' 
+    inp = code_input.get('1.0', END)
+    code_output.delete('1.0', END)
+    filetype = file_path.split('.')
+    if 'cpp' in filetype[1]:
+        Compile(text, code_input, code_output, file_path, editor, is_on)
+        p = subprocess.Popen(["a.exe"], stdout=subprocess.PIPE, stdin = subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
+        code = editor.get('1.0', END)
+        if "cin" or "scanf" in code:
+            inp = inp.encode('ascii')   
+            p.stdin.write(inp)
+        output, _ = p.communicate()
+    elif 'txt' in filetype[1]:
+        return
+    elif 'py' in filetype[1]:
+        Speak('Running')
+        command = ['python', file_path]
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stdin = subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        code = editor.get('1.0', END)
+        if "input" in code:
+            inp = inp.encode('ascii')   
+            process.stdin.write(inp)
+        output, error = process.communicate()
+        if error is not None:
+            code_output.insert('1.0', error)
+            if is_on == True:
+                multi_thread(Speak, error)
+    elif 'java' in filetype[1]:
+        Compile(text, code_input, code_output, file_path, editor, is_on)
+        filename = file_path.split('.')
+        obj = filename[0]+'.class'
+        p = subprocess.Popen([obj], stdout=subprocess.PIPE, stdin = subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
+        code = editor.get('1.0', END)
+        if "Scanner" in code:
+            inp = inp.encode('ascii')   
+            p.stdin.write(inp)
+        output, _ = p.communicate()
+    elif 'c' in filetype[1]:        
+        Compile(text, code_input, code_output, file_path, editor, is_on)
+        p = subprocess.Popen(["a.exe"], stdout=subprocess.PIPE, stdin = subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
+        code = editor.get('1.0', END)
+        if "scanf" in code:
+            inp = inp.encode('ascii')   
+            p.stdin.write(inp)
+        output, _ = p.communicate()
+    else:
+        return
+           
+    code_output.insert('1.0', output)
+    if output is not None and is_on == True: 
+        output = output.decode('utf-8')
+        multi_thread(Speak, output)
+
+
 def Action(command):
     '''
     For finding the trigger word from the text obtained from speech and calling the neccessary function based on the trigger word
     '''
-    # print(command)
+    print(command)
     global editor
     global count
     global activity_log
     global code_input
+    global activity_lb
 
     control = {'deactivate':Deactivate, 'activate':Activate, 'open':OpenVoice,          
                  'save':SaveVoice, 'compile':Compile, 'close':sys.exit, 'exit':sys.exit,
@@ -123,15 +244,15 @@ def Action(command):
             #Every time there is change on the editor the user is told the current position of cursor
             TellPos(command, editor, count, activity_log, code_input)
             return
-    if ('.c'==file_path) or ('.cpp'==file_path): #i.e both c and c++ files are targeted
+    if '.c'in file_path: #i.e both c and c++ files are targeted
         for item in c_cpp_common_triggers.keys():
             if item in command:
-                c_cpp_common_triggers[item](command, editor, count, activity_log)
+                c_cpp_common_triggers[item](command, editor, count, activity_log, activity_lb)
                 count+=1
                 TellPos(command, editor, count, activity_log, code_input)
                 return
 
-    if '.cpp'==file_path: #only c++ files are targeted
+    if '.cpp' in file_path: #only c++ files are targeted
         for item in cpp_triggers.keys():
             if item in command:
                 cpp_triggers[item](command, editor, count, activity_log)
@@ -191,43 +312,48 @@ def SaveVoice():
     '''     
     global file_path
     global lb
+    global activity_lb
     if file_path == '':
         p = os.getcwd()+'/'
         Speak('What name would you like me to give to the file ?')
         time.sleep(0.5)
         beepy.beep(4)
-        command = Listen()
-        Speak('What is the format of this file ? Say 0 for C++, 1 for Python, 2 for Java, 3 for c and 4 for text')
-        time.sleep(0.5)
-        beepy.beep(4)
-        format = Listen()
-        if '0' in format:
-            command = command+'.cpp'
-        elif '1' in format:
-            command = command+'.cpp'
-        elif '2' in format:
-            command = command+'.java'
-        elif '3' in format:
-            command = command+'.c'
-        elif '4' in format:
-            command = command+'.txt'        
+        try:
+            command = Listen(activity_lb)
+            Speak('What is the format of this file ? Say 0 for C++ 1 for Python 2 for Java 3 for c and 4 for text')
+            time.sleep(0.5)
+            beepy.beep(4)
+            format = Listen(activity_lb)
+            if '0' in format:
+                command = command+'.cpp'
+            elif '1' in format:
+                command = command+'.cpp'
+            elif '2' in format:
+                command = command+'.java'
+            elif '3' in format:
+                command = command+'.c'
+            elif '4' in format:
+                command = command+'.txt'
+            else:
+                return    
 
-        command = command.replace(' ', '')
-        Speak('I am saving it as ')
-        for char in command:
-            Speak(char)
-        Speak('Say yes to confirm and no to try again')
-        cmd = Listen()
-        if 'yes' in cmd:
-            path = os.path.join(p, command)
-        else:
+            command = command.replace(' ', '')
+            Speak('I am saving it as ')
+            for char in command:
+                Speak(char)
+            Speak('Say yes to confirm and no to try again')
+            cmd = Listen(activity_lb)
+            if 'yes' in cmd:
+                path = os.path.join(p, command)
+        except:
             SaveVoice()
+
     else:
         path = file_path
-    with open(path, 'w') as file:
-        code = editor.get('1.0', END)
-        file.write(code)
-        Path(path)    
+        with open(path, 'w') as file:
+            code = editor.get('1.0', END)
+            file.write(code)
+            Path(path)    
     if file_path != '':
         UpdateLogo(file_path, lb, logo_j, logo_cp, logo_p, logo_t, logo_c, logo)
 
@@ -237,12 +363,13 @@ def OpenVoice():
     '''  
     global file_path
     global lb
+    global activity_lb
     p = 'files/'
     Speak('Which one of the following would you like me to open ?')
     files = os.listdir(p)
     for file in files:
         Speak(file)
-        command = Listen()
+        command = Listen(activity_lb)
         if command is not None and 'this' in command:
             path = os.path.join(p, file)
             break
@@ -295,7 +422,7 @@ on = ImageTk.PhotoImage(Image.open("assets/on.png").resize((60, 20), Image.ANTIA
 off = ImageTk.PhotoImage(Image.open("assets/off.png").resize((60, 20), Image.ANTIALIAS))
 
 #Main label on the tkinter app window
-lb = Label(app, justify = RIGHT, compound = LEFT, padx = 10, text = "newfile.cpp",  font = Bfont, image = logo)
+lb = Label(app, justify = RIGHT, compound = LEFT, padx = 10, text = "newfile",  font = Bfont, image = logo)
 
 lb.pack() 
 
@@ -386,5 +513,5 @@ code_output.bind("<Key>", lambda e: "break")
 c.config(command = code_output.yview)
 
 #Starting another thread for misty mode before the main thread starts which is a infinite loop
-multi_thread(MistyMode)
+multi_thread(Start)
 app.mainloop()

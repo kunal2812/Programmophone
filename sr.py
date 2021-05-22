@@ -3,6 +3,7 @@
 import pyttsx3
 import speech_recognition as sr
 from spellchecker import SpellChecker
+from tkinter import *
 
 recognizer = sr.Recognizer()
 recognizer.phrase_threshold = 0.15
@@ -25,7 +26,7 @@ dict =  {"hash":'#', ' slash ':'/', 'hyphen':'-', 'underscore':'_', 'backslash':
             'see in':'input', 'cin':'input', 'new line':'newline', 'ent':'int', 'man':'main', 'men':'main', ' space ':' ', 
             'entertain':'main', 'ant man':'main', 'write':'right', 'zero':'0', ' one ':'1', ' two ':'2', 'three':'3', 'four':'4',
             'five':'5', 'six':'6', 'seven':'7', 'eight':'8', 'nine':'9', 'STD':'std', 'new line': 'newline', 'colon':':', 'ethan':'main',
-            'tab':'         ', 'bracket':'brackets', 'inter':'enter', 'brake':'break'
+            'tab':'         ', 'bracket':'brackets', 'inter':'enter', 'brake':'break', 'hasty':'hey misty', 'payal':'file', 'mister':'misty'
         }
 
 def Correction(command):
@@ -83,21 +84,21 @@ def Speak(text):
         pass
     return
 
-def Listen():
+def Listen(activity_lb):
     '''
     Speech to text based on API call
     '''
     try:
         with sr.Microphone(0) as source:
             print('Speak Now')
-            recognizer.adjust_for_ambient_noise(source, duration=0.5)
-            voice = recognizer.listen(source,timeout=1)
+            recognizer.adjust_for_ambient_noise(source, duration=0.2)
+            voice = recognizer.listen(source,timeout=3)
             text = recognizer.recognize_google(voice)
             # text = input('Enter\n')
             # print(text)
             text = text.lower()
             text = Correction(text)
-            # print(text)
+            print(text)
             return text
     except:
         pass

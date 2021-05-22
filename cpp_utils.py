@@ -8,7 +8,7 @@ import time
 import beepy
 from utils import *
 
-def IncludeHeader(command, editor, count, activity_log):
+def IncludeHeader(command, editor, count, activity_log, activity_lb):
     '''
     For including header file, just say include followed by header file one wants to include
     '''
@@ -33,7 +33,7 @@ def Namespace(command, editor, count, activity_log):
     edit = str(count)+ '::' + pos + '-> ' + 'You are now using namespace ' + words[len(words)-2] + ' \n'
     UpdateActivity(edit, activity_log)
 
-def Main(command, editor, count, activity_log):
+def Main(command, editor, count, activity_log, activity_lb):
     '''
     For adding main function
     '''
@@ -44,7 +44,7 @@ def Main(command, editor, count, activity_log):
     editor.mark_set('insert', 'insert-1l')
     UpdateActivity(edit, activity_log)
 
-def DeclareVar(command, editor, count, activity_log):
+def DeclareVar(command, editor, count, activity_log, activity_lb):
     '''
     For declaring variable
     '''
@@ -104,14 +104,14 @@ def Newline(command, editor, count, activity_log):
     edit = str(count)+ '::' + pos + '-> ' + 'Added a newline ' + '\n'
     UpdateActivity(edit, activity_log)
 
-def If(command, editor, count, activity_log):
+def If(command, editor, count, activity_log, activity_lb):
     '''
     For initializing an else if block
     '''
     time.sleep(1)      
     beepy.beep(sound=4)
     #After the chime speak condition for the if statement
-    condition = Listen()
+    condition = Listen(activity_lb)
     condition = condition.replace(' ', '')
     if condition is not None:
         code = 'if('
@@ -125,14 +125,14 @@ def If(command, editor, count, activity_log):
     else:
         return
 
-def ElseIf(command, editor, count, activity_log):
+def ElseIf(command, editor, count, activity_log, activity_lb):
     '''
     For initializing an else if block
     '''
     time.sleep(1)      
     beepy.beep(sound=4)
     #After the chime speak condition for the else if statement
-    condition = Listen()
+    condition = Listen(activity_lb)
     condition = condition.replace(' ', '')
     if condition is not None:
         code = 'else if('
@@ -144,7 +144,7 @@ def ElseIf(command, editor, count, activity_log):
         edit = str(count)+ '::' + pos + '-> ' + 'Added a else if block, where condition is ' + condition +  '\n'
         UpdateActivity(edit, activity_log)
 
-def Else(command, editor, count, activity_log):
+def Else(command, editor, count, activity_log, activity_lb):
     '''
     For initializing an else block
     '''
@@ -155,14 +155,14 @@ def Else(command, editor, count, activity_log):
     edit = str(count)+ '::' + pos + '-> ' + 'Added a else block' +  '\n'
     UpdateActivity(edit, activity_log)
 
-def While(command, editor, count, activity_log):
+def While(command, editor, count, activity_log, activity_lb):
     '''
     For initializing a while loop
     '''
     time.sleep(1)      
     beepy.beep(sound=4)
     #After the chime speak condition for the else if statement
-    condition = Listen()
+    condition = Listen(activity_lb)
     condition = condition.replace(' ', '')
     if condition is not None:
         code = 'while('
@@ -174,28 +174,28 @@ def While(command, editor, count, activity_log):
         editor.mark_set('insert', 'insert-1l')
         UpdateActivity(edit, activity_log)
 
-def For(command, editor, count, activity_log):
+def For(command, editor, count, activity_log, activity_lb):
     '''
     For adding for loop which has 3 parts, Initialization, Condition and Updation
     '''
     time.sleep(0.5)
     Speak('Initialization')
     #After initialization is said speak how you want to initialize
-    p1 = Listen()
+    p1 = Listen(activity_lb)
     p1 = p1.replace(' ', '')
     if p1 is None:
         return
     time.sleep(0.5)
     Speak('Condition')
     #After condition is said speak how you want to add the condition
-    p2 = Listen()
+    p2 = Listen(activity_lb)
     p2 = p2.replace(' ', '')
     if p2 is None:
         return
     time.sleep(0.5)
     Speak('Updation')
     #After updation is said speak how you want to update the variable
-    p3 = Listen()
+    p3 = Listen(activity_lb)
     p3 = p3.replace(' ', '')
     if p3 is None:
         return
@@ -209,14 +209,14 @@ def For(command, editor, count, activity_log):
     edit = str(count)+ '::' + pos + '-> ' + 'Added a for loop while ' + p2 +  '\n'
     UpdateActivity(edit, activity_log)
 
-def DoWhile(command, editor, count, activity_log):
+def DoWhile(command, editor, count, activity_log, activity_lb):
     '''
     For initializing a do while loop
     '''
     time.sleep(1)      
     beepy.beep(sound=4)
     #After the chime speak condition for the else if statement
-    condition = Listen()
+    condition = Listen(activity_lb)
     condition = condition.replace(' ', '')
     if condition is not None:
         code = 'do{\n\n}\nwhile('
