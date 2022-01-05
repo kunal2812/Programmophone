@@ -22,7 +22,7 @@ dict =  {"hash":'#', ' slash ':'/', 'hyphen':'-', 'underscore':'_', 'backslash':
             'equalto':'=', 'equal to':'=', 'none':'', 'left shift':'<<', 'right shift':'>>', "double quotes":"\"\"",
             'single quotes':"''", "double coats":"\"\"", 'single quote':"''", "double quote":"\"\"",  'not':'!', 'arrow':'->', 'comma':',',
             'semi colon':';', 'semi-colon':';',  'single coats':"''", "double coat":"\"\"", 'single coat':"''",
-             'bull':'bool','vivid':'evade', 'entmen':'int main', 'see out':'print', 'cout':'print',
+            'bull':'bool','vivid':'evade', 'entmen':'int main', 'see out':'print', 'cout':'print',
             'see in':'input', 'cin':'input', 'new line':'newline', 'ent':'int', 'man':'main', 'men':'main', ' space ':' ', 
             'entertain':'main', 'ant man':'main', 'write':'right', 'zero':'0', ' one ':'1', ' two ':'2', 'three':'3', 'four':'4',
             'five':'5', 'six':'6', 'seven':'7', 'eight':'8', 'nine':'9', 'STD':'std', 'new line': 'newline', 'colon':':', 'ethan':'main',
