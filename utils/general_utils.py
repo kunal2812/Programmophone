@@ -3,8 +3,8 @@
 
 from tkinter import *
 from threading import *
-from editor import *
-from sr import *
+from utils.editor import *
+from utils.sr_utils import *
 import beepy
 from PIL import ImageTk, Image
 import speech_recognition as sr
@@ -114,11 +114,11 @@ def Compile(text, code_input, code_output, file_path, editor, is_on):
     Speak(text)
     #Most of the times error in the later parts are associated with the initial errors so the user is told the error in the initial part so that user don't has to listen the complete error log
     if error is not None and is_on == True:
-        gist = error.split('\n')
+        gist = error.split("\n")
         if len(gist)<=4:           
             multi_thread(Speak, error)
         else:
-            gist = gist[0]+'\n' + gist[1] + '\n' + gist[2] + '\n' + gist[3]
+            gist = gist[0]+"\n" + gist[1] + "\n" + gist[2] + "\n" + gist[3]
             multi_thread(Speak, gist)
     return error
 

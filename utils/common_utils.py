@@ -2,7 +2,7 @@
 
 from tkinter import *
 from threading import *
-from utils import *
+from utils.general_utils import *
 
 def TellPos(command, editor, count, activity_log, code_input):
     '''

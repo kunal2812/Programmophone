@@ -89,7 +89,7 @@ def Listen(activity_lb):
     Speech to text based on API call
     '''
     try:
-        with sr.Microphone(0) as source:
+        with sr.Microphone() as source:
             print('Speak Now')
             recognizer.adjust_for_ambient_noise(source, duration=0.2)
             voice = recognizer.listen(source,timeout=3)

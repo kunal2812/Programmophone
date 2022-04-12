@@ -11,14 +11,14 @@ import time
 from PIL import ImageTk, Image
 import speech_recognition as sr
 from threading import *
-from editor import *
-from sr import *
-from cpp_utils import *
-from utils import *
-from common_utils import *
+from utils.editor import *
+from utils.sr_utils import *
+from utils.cpp_utils import *
+from utils.general_utils import *
+from utils.common_utils import *
 
-Font = ("Comic Sans MS", "10", "normal") #Default font
-Bfont = ("Comic Sans MS", "10", "bold")
+Font = ("Arial", "10", "normal") #Default font
+Bfont = ("Arial", "10", "bold")
 file_path = ''
 is_on = False #Carries the state of voice mode
 count = 1 #Activity count while the voice mode is on
@@ -296,7 +296,7 @@ app.minsize(1200, 670)
 
 #All logos corresponding to the file type
 logo_j = ImageTk.PhotoImage(Image.open("assets/java.png").resize((40, 22), Image.ANTIALIAS))
-logo_cp = ImageTk.PhotoImage(Image.open("assets/cpp.png").resize((30, 30), Image.ANTIALIAS))
+logo_cp = ImageTk.PhotoImage(Image.open("assets/cpp.png").resize((26, 26), Image.ANTIALIAS))
 logo_p = ImageTk.PhotoImage(Image.open("assets/python.png").resize((25, 20), Image.ANTIALIAS))
 logo_t = ImageTk.PhotoImage(Image.open("assets/text.png").resize((25, 23), Image.ANTIALIAS))
 logo_c = ImageTk.PhotoImage(Image.open("assets/c.png").resize((25, 23), Image.ANTIALIAS))
@@ -398,4 +398,5 @@ c.config(command = code_output.yview)
 
 #Starting another thread for misty mode before the main thread starts which is a infinite loop
 multi_thread(MistyMode)
+app.resizable(False,False)
 app.mainloop()

@@ -17,6 +17,8 @@ Team Name: Kryptonites
   
 - Can be used by both regular programmers and those with visual impairment
 
+- Supported OS: Windows 7/8/10/11 
+
 ## Installation
 
 Git cloning the repository
@@ -49,7 +51,11 @@ python3 app.py
 ## Manual and instructions Link:
 
   _In files above_
-  
+
+## Screenshots
+
+![Screenshot 1](./assets/Screenshots/2.png)
+
 ## Dataset Link:
   <a href="https://drive.google.com/drive/folders/1m0qeN1g32a7GKmeWt11A0XeGnlGqvBBh?usp=sharing">Dataset Link</a>
   

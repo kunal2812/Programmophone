@@ -2,11 +2,11 @@
 
 from tkinter import *
 from threading import *
-from editor import *
-from sr import *
+from utils.editor import *
+from utils.sr_utils import *
 import time
 import beepy
-from utils import *
+from utils.general_utils import *
 
 def IncludeHeader(command, editor, count, activity_log, activity_lb):
     '''
@@ -67,7 +67,7 @@ def Print(command, editor, count, activity_log):
     edit = ''
     pos = editor.index(INSERT)
     for item in arg:
-        if item is not '':
+        if item != '':
             edit = edit + item + ' '
             code = code + ' << ' + item
     code += ';\n'
@@ -85,7 +85,7 @@ def Input(command, editor, count, activity_log):
     edit = ''
     code = 'std::cin '
     for item in arg:
-        if item is not '':
+        if item != '':
             edit = edit + item + ' '
             code = code + ' >> ' +item
     code += ';\n'
