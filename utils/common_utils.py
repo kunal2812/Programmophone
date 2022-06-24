@@ -144,7 +144,7 @@ def Brackets(command, editor, count, activity_log):
     editor.insert(INSERT, code)
     editor.mark_set('insert','insert-1c')
 
-def Extra(command, editor, count, activity_log):
+def Extra(command, editor, count, activity_log, code_input):
     '''
     For adding anything onto the editor, just say 'add' followed by anything you want to add to the editor
     '''
@@ -190,7 +190,7 @@ def ReadLine(command, editor, count, activity_log, code_input):
     lst = command.split(' ')
     code = editor.get('1.0', END)
     if len(lst) <= 2:
-        multi_thread(Speak, code)
+        MultiThread(Speak, code)
     else:
         ind = int(lst[2])
         lines = code.split('\n')

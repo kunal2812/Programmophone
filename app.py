@@ -12,7 +12,7 @@ from PIL import ImageTk, Image
 import speech_recognition as sr
 from threading import *
 from utils.editor import *
-from utils.sr_utils import *
+from utils.speech_utils import *
 from utils.cpp_utils import *
 from utils.general_utils import *
 from utils.common_utils import *
@@ -41,7 +41,7 @@ def MistyMode():
     global activity_lb
     while is_on==False:
         # print(active_count())
-        command = Listen(activity_lb)
+        command = Listen()
         # print(active_count())
         if command is not None:
             if 'hey' and 'misty' in command:
@@ -59,7 +59,7 @@ def VoiceMode():
     global activity_lb
     while is_on==True:
         # print(active_count())
-        command = Listen(activity_lb)        
+        command = Listen()        
         # print(active_count())
         if command is not None:
             Action(command)
@@ -74,7 +74,7 @@ def Activate():
     Speak('Voice Mode on')
     is_on = True
     switch.config(image = on)
-    multi_thread(VoiceMode)
+    MultiThread(VoiceMode)
 
 def Deactivate():
     '''
@@ -86,7 +86,7 @@ def Deactivate():
     is_on = False      
     Speak('Deactivated voice mode')
     switch.config(image=off)
-    multi_thread(MistyMode)
+    MultiThread(MistyMode)
 
 def Action(command):
     '''
@@ -99,11 +99,12 @@ def Action(command):
     global code_input
     global activity_lb
 
+    program = {'compile':Compile, 'run':Run }
+    
     control = {'deactivate':Deactivate, 'activate':Activate, 'open':OpenVoice,          
-                 'save':SaveVoice, 'compile':Compile, 'close':sys.exit, 'exit':sys.exit,
-                 'run':Run
+                 'save':SaveVoice, 'close':sys.exit, 'exit':sys.exit, 'compile':Compile, 'run':Run 
                 }
-
+    
     #Common functions for moving the cursor and deleting characters
     common = {'add':Extra, 'position':TellPos, 'give':GiveInput, 'remove':DeletePos, 'move':MovePos,   
                 'read':ReadLine, 'escape':Escape, 'enter':Enter, 'brackets':Brackets
@@ -114,8 +115,12 @@ def Action(command):
                              'if statement':If, 'do while':DoWhile, 'while':While
                             }
     #C++ specific triggers which are checked only if the file type is .cpp
-    cpp_triggers = {'namespace':Namespace, 'print':Print, 'newline':Newline, 'input':Input}                                                                                             
-
+    cpp_triggers = {'namespace':Namespace, 'print':Print, 'newline':Newline, 'input':Input}
+    
+    for item in program.keys():
+        if item in command:
+            program[item](code_input, code_output, file_path, editor, is_on)
+            return
     for item in control.keys():
         if item in command:
             control[item]()
@@ -203,11 +208,11 @@ def SaveVoice():
         time.sleep(0.5)
         beepy.beep(4)
         try:
-            command = Listen(activity_lb)
+            command = Listen()
             Speak('What is the format of this file ? Say 0 for C++ 1 for Python 2 for Java 3 for c and 4 for text')
             time.sleep(0.5)
             beepy.beep(4)
-            format = Listen(activity_lb)
+            format = Listen()
             if '0' in format:
                 command = command+'.cpp'
             elif '1' in format:
@@ -226,7 +231,7 @@ def SaveVoice():
             for char in command:
                 Speak(char)
             Speak('Say yes to confirm and no to try again')
-            cmd = Listen(activity_lb)
+            cmd = Listen()
             if 'yes' in cmd:
                 path = os.path.join(p, command)
         except:
@@ -248,12 +253,13 @@ def OpenVoice():
     global file_path
     global lb
     global activity_lb
+    path = ''
     p = 'files/'
     Speak('Which one of the following would you like me to open ?')
     files = os.listdir(p)
     for file in files:
         Speak(file)
-        command = Listen(activity_lb)
+        command = Listen()
         if command is not None and 'this' in command:
             path = os.path.join(p, file)
             break
@@ -269,7 +275,7 @@ def OpenVoice():
     else:
         Speak('Try Again')
 
-def button_mode():
+def ButtonMode():
     '''
     For activating or deactivating voice mode with the button on the top right corner of layout
     '''  
@@ -281,18 +287,18 @@ def button_mode():
         switch.config(image=off)        
         is_on = False
         activity_log.delete('1.0', END)    
-        multi_thread(Speak, 'Deactivated voice mode')
-        multi_thread(MistyMode)
+        MultiThread(Speak, 'Deactivated voice mode')
+        MultiThread(MistyMode)
     else:
         switch.config(image = on)         
         is_on = True     
-        multi_thread(Speak, 'Activated Voice Mode')
-        multi_thread(VoiceMode)
+        MultiThread(Speak, 'Activated Voice Mode')
+        MultiThread(VoiceMode)
 
 app = Tk()
 app.geometry("1200x670-100-38")
 app.title('Programmophone')
-app.minsize(1200, 670)
+app.minsize(1300, 670)
 
 #All logos corresponding to the file type
 logo_j = ImageTk.PhotoImage(Image.open("assets/java.png").resize((40, 22), Image.ANTIALIAS))
@@ -319,8 +325,8 @@ header = Menu(app)
 header.add_command(label='Open', command=Open)
 header.add_command(label='Save', command=Save)
 header.add_command(label='Save as', command=SaveAs)
-header.add_command(label='Compile', command=lambda: multi_thread(Compile, 'Compiled successfully', code_input, code_output, file_path, editor, is_on))
-header.add_command(label='Run', command=lambda: multi_thread(Run, 'Executed successfully', code_input, code_output, file_path, editor, is_on))
+header.add_command(label='Compile', command=lambda: MultiThread(Compile, code_input, code_output, file_path, editor, is_on))
+header.add_command(label='Run', command=lambda: MultiThread(Run, code_input, code_output, file_path, editor, is_on))
 header.add_command(label='Close', command=sys.exit)
 app.config(menu=header)
 
@@ -347,12 +353,12 @@ activity_log = Text(F1_right, width = 50, height=27, yscrollcommand=a.set, borde
 activity_log.pack(fill = BOTH, pady=(0,20))
 
 #Making the activity log non-editable
-activity_log.bind("<Key>", lambda e: "break")
+# activity_log.bind("<Key>", lambda e: "break") # check
 
 a.config(command=activity_log.yview)
 
 #Switch for the voice mode
-switch = Button(lb,image=off,bd =0,command = button_mode, anchor=E)
+switch = Button(lb,image=off,bd =0,command = ButtonMode, anchor=E)
 switch.pack(side=RIGHT, padx=(1070,0), anchor=E, expand=True)
 
 #Bottom Frame
@@ -397,6 +403,6 @@ code_output.bind("<Key>", lambda e: "break")
 c.config(command = code_output.yview)
 
 #Starting another thread for misty mode before the main thread starts which is a infinite loop
-multi_thread(MistyMode)
-app.resizable(False,False)
+MultiThread(MistyMode)
+app.resizable(True,False) 
 app.mainloop()

@@ -48,13 +48,17 @@ python3 app.py
 ## Presentation Link:
   <a href="https://docs.google.com/presentation/d/1N1-8xPaULpoOqlEtqVsVmkClGOwFKV0gymYr4FAgCko/edit?usp=sharing">Presentation Link</a>
   
+## Video Link:
+  <a href="https://drive.google.com/file/d/13EmyuMlFlRb8ez-2jN_XS3J0Vs3PKSyp/view?usp=sharing">Presentation Link</a>
+
 ## Manual and instructions Link:
 
   _In files above_
 
 ## Screenshots
 
-![Screenshot 1](./assets/Screenshots/2.png)
+![Screenshot 1](./assets/Screenshots/1.png)
+![Screenshot 2](./assets/Screenshots/2.png)
 
 ## Dataset Link:
   <a href="https://drive.google.com/drive/folders/1m0qeN1g32a7GKmeWt11A0XeGnlGqvBBh?usp=sharing">Dataset Link</a>

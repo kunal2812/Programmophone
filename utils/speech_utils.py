@@ -6,6 +6,7 @@ from spellchecker import SpellChecker
 from tkinter import *
 
 recognizer = sr.Recognizer()
+recognizer.energy_threshold = 650 
 recognizer.phrase_threshold = 0.15
 recognizer.pause_threshold = 0.5
 
@@ -77,14 +78,16 @@ def Speak(text):
     text = text.replace('|', ' pipe ')
     try:
         engine = pyttsx3.init()
-        engine.setProperty('rate', 130)
+        engine.setProperty('rate', 130) 
+        voices = engine.getProperty('voices')
+        engine.setProperty('voice', voices[2].id)
         engine.say(text)
         engine.runAndWait()
     except:
         pass
     return
 
-def Listen(activity_lb):
+def Listen():
     '''
     Speech to text based on API call
     '''
@@ -101,4 +104,5 @@ def Listen(activity_lb):
             print(text)
             return text
     except:
+        print("Not found")
         pass

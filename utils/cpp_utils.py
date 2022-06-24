@@ -3,7 +3,7 @@
 from tkinter import *
 from threading import *
 from utils.editor import *
-from utils.sr_utils import *
+from utils.speech_utils import *
 import time
 import beepy
 from utils.general_utils import *
@@ -111,7 +111,7 @@ def If(command, editor, count, activity_log, activity_lb):
     time.sleep(1)      
     beepy.beep(sound=4)
     #After the chime speak condition for the if statement
-    condition = Listen(activity_lb)
+    condition = Listen()
     condition = condition.replace(' ', '')
     if condition is not None:
         code = 'if('
@@ -132,7 +132,7 @@ def ElseIf(command, editor, count, activity_log, activity_lb):
     time.sleep(1)      
     beepy.beep(sound=4)
     #After the chime speak condition for the else if statement
-    condition = Listen(activity_lb)
+    condition = Listen()
     condition = condition.replace(' ', '')
     if condition is not None:
         code = 'else if('
@@ -162,7 +162,7 @@ def While(command, editor, count, activity_log, activity_lb):
     time.sleep(1)      
     beepy.beep(sound=4)
     #After the chime speak condition for the else if statement
-    condition = Listen(activity_lb)
+    condition = Listen()
     condition = condition.replace(' ', '')
     if condition is not None:
         code = 'while('
@@ -181,24 +181,24 @@ def For(command, editor, count, activity_log, activity_lb):
     time.sleep(0.5)
     Speak('Initialization')
     #After initialization is said speak how you want to initialize
-    p1 = Listen(activity_lb)
-    p1 = p1.replace(' ', '')
+    p1 = Listen()
     if p1 is None:
-        return
+        return    
+    p1 = p1.replace(' ', '')
     time.sleep(0.5)
     Speak('Condition')
     #After condition is said speak how you want to add the condition
-    p2 = Listen(activity_lb)
-    p2 = p2.replace(' ', '')
+    p2 = Listen()
     if p2 is None:
         return
+    p2 = p2.replace(' ', '')
     time.sleep(0.5)
     Speak('Updation')
     #After updation is said speak how you want to update the variable
-    p3 = Listen(activity_lb)
-    p3 = p3.replace(' ', '')
+    p3 = Listen()
     if p3 is None:
         return
+    p3 = p3.replace(' ', '')
     p1 = p1.replace('none','')
     p2 = p2.replace('none','')
     p3 = p3.replace('none','')
@@ -216,7 +216,7 @@ def DoWhile(command, editor, count, activity_log, activity_lb):
     time.sleep(1)      
     beepy.beep(sound=4)
     #After the chime speak condition for the else if statement
-    condition = Listen(activity_lb)
+    condition = Listen()
     condition = condition.replace(' ', '')
     if condition is not None:
         code = 'do{\n\n}\nwhile('
