@@ -17,7 +17,7 @@ Team Name: Kryptonites
   
 - Can be used by both regular programmers and those with visual impairment
 
-- Supported OS: Windows 7/8/10/11 
+- Supported OS: Windows
 
 ## Installation
 
@@ -49,7 +49,7 @@ python3 app.py
   <a href="https://docs.google.com/presentation/d/1N1-8xPaULpoOqlEtqVsVmkClGOwFKV0gymYr4FAgCko/edit?usp=sharing">Presentation Link</a>
   
 ## Video Link:
-  <a href="https://drive.google.com/file/d/13EmyuMlFlRb8ez-2jN_XS3J0Vs3PKSyp/view?usp=sharing">Presentation Link</a>
+  <a href="https://drive.google.com/file/d/13EmyuMlFlRb8ez-2jN_XS3J0Vs3PKSyp/view?usp=sharing">Video Link</a>
 
 ## Manual and instructions Link:
 
